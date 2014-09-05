@@ -1,0 +1,319 @@
+<!doctype html>
+<html>
+<head>
+<!--<script type="text/javascript" src="http://www.java.com/js/deployJava.js"></script>-->
+<script>
+/**
+ * Provides requestAnimationFrame in a cross browser way.
+ * http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+ */
+if ( !window.requestAnimationFrame ) {
+	window.requestAnimationFrame = (function() {
+		return window.webkitRequestAnimationFrame ||
+		window.mozRequestAnimationFrame ||
+		window.oRequestAnimationFrame ||
+		window.msRequestAnimationFrame ||
+		function( /* function FrameRequestCallback */ callback, /* DOMElement Element */ element ) {
+			window.setTimeout( callback, 1000 / 60 );
+		};
+	})();
+}
+</script>
+</head>
+<body>
+<!--<script>
+/*deployJava.runApplet({
+		code:		'img_applet.ImgApplet.class',
+		archive:	'img-applet.jar',
+		width:		100,
+		height:	40
+	}, {
+		rtmp:		'rtmp://localhost/rtmp/webcam'
+	});*/
+script>-->
+<object id="img-applet-ie"
+  classid="clsid:8AD9C840-044E-11D1-B3E9-00805F499D93"
+  width="100" height="40">
+  <param name="archive" value="img-applet.jar">
+  <param name="code" value="img_applet.ImgApplet">
+  <param name="ffmpeg-re" value="">
+  <param name="ffmpeg-f:i" value="">
+  <!--<param name="ffmpeg-i" value="rtmp://10.44.41.97/rtmp/webcam">-->
+  <!--<param name="ffmpeg-i" value="rtmp://europaplus.cdnvideo.ru:1935/europaplus-live/eptv_main.sdp">-->
+  <!--<param name="ffmpeg-i" value="rtmp://85.132.78.6:1935/live/muztv.stream">-->
+  <param name="ffmpeg-i" value="http://83.139.104.101/Content/HLS/Live/Channel(Sk_1)/index.m3u8">
+  <!--<param name="ffmpeg-map" value="0:6">-->
+  <param name="ffmpeg-q:v" value="0.0">
+  <!-- ‘-vsync parameter’
+    Video sync method. For compatibility reasons old values can be specified as numbers. 
+    Newly added values will have to be specified as strings always.
+    ‘0, passthrough’ - Each frame is passed with its timestamp from the demuxer to the muxer. 
+    ‘1, cfr’ - Frames will be duplicated and dropped to achieve exactly the requested constant frame rate. 
+    ‘2, vfr’ - Frames are passed through with their timestamp or dropped so as to prevent 2 frames from having the same timestamp. 
+    ‘drop’ - As passthrough but destroys all timestamps, making the muxer generate fresh timestamps based on frame-rate. 
+    ‘-1, auto’ - Chooses between 1 and 2 depending on muxer capabilities. This is the default method.
+  -->
+  <param name="ffmpeg-vsync" value="0">
+  <!--<param name="ffmpeg-muxpreload" value="10">
+  <param name="ffmpeg-muxdelay" value="10">
+  <param name="ffmpeg-loglevel" value="warning">-->
+  <param name="debug" value="yes">
+  <comment>
+    <embed id="img-applet"
+      type="application/x-java-applet"
+      width="100" height="40" 
+      archive="img-applet.jar"
+      code="img_applet.ImgApplet"
+      pluginspage="http://java.com/download/"
+      ffmpeg-re=""
+      ffmpeg-f:i=""
+      ffmpeg-i="rtmp://europaplus.cdnvideo.ru:1935/europaplus-live/eptv_main.sdp"
+      ffmpeg-q:v="0"
+      ffmpeg-vsync="0"
+      debug="no" />
+    </comment>
+  </object>
+
+<!-- 
+       ffmpeg-map="0:0"
+      ffmpeg-an=""
+-->
+ 
+<!-- 
+      ffmpeg-frames:d="3"
+      ffmpeg-c:a="copy"
+      ffmpeg-c:v="copy"
+      ffmpeg-f:o="mp4"
+      ffmpeg-movflags="frag_keyframe+empty_moov"
+      ffmpeg-o="output.mp4"
+ -->
+
+<!--
+<embed id="img-applet"
+       type="application/x-java-applet"
+       width="100" height="40" 
+       archive="img-applet.jar"
+       code="img_applet.ImgApplet"
+       pluginspage="http://java.com/download/"
+       rtmp="rtmp://localhost/rtmp/webcam"
+       qscale="0.0" />-->
+
+<img id="image0" width="1047" height="576" style="visibility: hidden; display: none;" />
+<img id="image1" width="1047" height="576" style="visibility: hidden; display: none;" />
+<br />
+<canvas id="videoImage" width="1047" height="576"></canvas>
+
+<object id="mp3-applet-ie"
+  classid="clsid:8AD9C840-044E-11D1-B3E9-00805F499D93"
+  width="100" height="40">
+  <param name="archive" value="img-applet.jar">
+  <param name="code" value="img_applet.ImgApplet">
+  <param name="ffmpeg-re" value="">
+  <param name="ffmpeg-f:i" value="">
+  <!--<param name="ffmpeg-i" value="rtmp://10.44.41.97/rtmp/webcam">-->
+  <!--<param name="ffmpeg-i" value="rtmp://europaplus.cdnvideo.ru:1935/europaplus-live/eptv_main.sdp">-->
+  <!--<param name="ffmpeg-i" value="rtmp://85.132.78.6:1935/live/muztv.stream">-->
+  <param name="ffmpeg-i" value="http://83.139.104.101/Content/HLS/Live/Channel(Sk_1)/index.m3u8">
+  <param name="ffmpeg-c:a" value="libmp3lame">
+  <param name="ffmpeg-f:o" value="mp3">
+  <param name="ffmpeg-vn" value="">
+  <param name="frame-buffer-size" value="5000">
+  <param name="mp3-frames-per-chunk" value="5">
+  <param name="debug" value="yes">
+  <comment>
+    <embed id="mp3-applet"
+      type="application/x-java-applet"
+      width="100" height="40" 
+      archive="img-applet.jar"
+      code="img_applet.ImgApplet"
+      pluginspage="http://java.com/download/"
+      ffmpeg-re=""
+      ffmpeg-f:i=""
+      ffmpeg-i="rtmp://europaplus.cdnvideo.ru:1935/europaplus-live/eptv_main.sdp"
+      ffmpeg-c:a="libmp3lame"
+      ffmpeg-f:o="mp3"
+      ffmpeg-vn=""
+      frame-buffer-size="100000"
+      mp3-frames-per-chunk="100"
+      debug="yes" />
+    </comment>
+  </object>
+
+<!-- 
+      ffmpeg-o="europaplus.mp3" src="http://localhost/europaplus.mp3"
+ -->
+ 
+<!-- <audio id="audio0" autoplay>Your browser does not support the <code>audio</code> element.</audio>
+<audio id="audio1" autoplay /> -->
+<audio id="audio" autoplay="autoplay" controls="controls" />
+<script>
+
+var width = 720, height = 540; // for the <embed> only
+
+// global variables
+var image, videoImage, videoImageContext, applet, applet_ie, applet_, sn = 0, last_img = -1;
+
+var audio, mp3applet, mp3applet_ie, mp3applet_, mp3sn = 0;
+
+// assign variables to HTML elements
+image = [ document.getElementById( 'image0' ), document.getElementById( 'image1' ) ];
+videoImage = document.getElementById( 'videoImage' );
+videoImageContext = videoImage.getContext( '2d' );
+applet = document.getElementById( 'img-applet' );
+applet_ie = document.getElementById( 'img-applet-ie' );
+
+audio = document.getElementById( 'audio' ); // [ document.getElementById( 'audio0' ), document.getElementById( 'audio1' ) ];
+mp3applet = document.getElementById( 'mp3-applet' );
+mp3applet_ie = document.getElementById( 'mp3-applet-ie' );
+
+function checkApplet() {
+	if (!applet_) {
+		if (applet && applet.getSN) {
+			applet_ = applet;
+			image[0].width = image[1].width = videoImage.width = width;
+			image[0].height = image[1].height = videoImage.height = height;
+		} else if (applet_ie && typeof(applet_ie.getSN) === "unknown")
+			applet_ = applet_ie;
+	}
+	return applet_;
+}
+
+function checkMp3Applet() {
+	if (!mp3applet_) {
+		if (mp3applet && mp3applet.getSN)
+			mp3applet_ = mp3applet;
+		else if (mp3applet_ie && typeof(mp3applet_ie.getSN) === "unknown")
+			mp3applet_ = mp3applet_ie;
+	}
+	return mp3applet_;
+}
+//background color if no video present
+videoImageContext.fillStyle = '#005337';
+videoImageContext.fillRect( 0, 0, videoImage.width, videoImage.height );				
+
+image[0].onload = image[1].onload = function() {
+	videoImageContext.drawImage( this, 0, 0, videoImage.width, videoImage.height );
+};
+/*
+function loadAudio(audio_) {
+	if (checkMp3Applet()) {
+		var mp3sn_ = mp3applet_.getSN();
+		if ( mp3sn_ != mp3sn && mp3sn_ > 0 ) {
+			mp3sn = mp3sn_;
+			var src_ = audio_.src = mp3applet_.getDataURI();
+			audio_.src_set_ = true;
+			//if (!theOtherAudio(audio_).is_playing_)
+			//	audio_.play();
+			console.log("audio # " + thisAudioIndex(audio_) + ": frame.sn = " + mp3sn_ + "; audio.src = " + (!src_ || src_.length < 50 ? src_ : src_.substring(0, 50) + "..."));
+		}
+	}
+}
+*/
+/*
+function tns(ns) { switch (ns) { case 0: return "NETWORK_EMPTY"; case 1: return "NETWORK_IDLE"; case 2: return "NETWORK_LOADING"; case 3: return "NETWORK_NO_SOURCE"; default: return "UNKNOWN"; } }
+function trs(rs) { switch (rs) { case 0: return "HAVE_NOTHING"; case 1: return "HAVE_METADATA"; case 2: return "HAVE_CURRENT_DATA"; case 3: return "HAVE_FUTURE_DATA"; case 4: return "HAVE_ENOUGH_DATA"; default: return "UNKNOWN"; } }
+function terr(err) { switch (err) { case 1: return "MEDIA_ERR_ABORTED"; case 2: return "MEDIA_ERR_NETWORK"; case 3: return "MEDIA_ERR_DECODE"; case 4: case 5: return "MEDIA_ERR_SRC_NOT_SUPPORTED"; default: return "UNKNOWN"; } }
+function conLog(e, t) {
+	var timeranges = "";
+	switch (t) {
+	case 1: // buffered
+		timeranges = " buffered:";
+		for (var i = 0; i < e.buffered.length; i++)
+			timeranges += " time range " + i + ": start=" + e.buffered.start(i) + "; end=" + e.buffered.end(i) + (i == e.buffered.length - 1 ? "" : ";");
+		break;
+	case 2: // played
+		timeranges = " played:";
+		for (var i = 0; i < e.played.length; i++)
+			timeranges += " time range " + i + ": start=" + e.played.start(i) + "; end=" + e.played.end(i) + (i == e.played.length - 1 ? "" : ";");
+		break;
+	}
+	return " readyState: " + e.readyState + "(" + trs(e.readyState) + "); networkState: " + e.networkState + "(" + tns(e.networkState) + ");" + timeranges; 
+}
+function conErr(e) { return " Error: " + e.error.code + "(" + terr(e.error.code) + ");" + conLog(e); }
+
+audio.onabort             = function() { console.log("event: abort;            " + conLog(this)); };
+audio.oncanplay           = function() { console.log("event: canplay;          " + conLog(this)); };
+audio.oncanplaythrough    = function() { console.log("event: canplaythrough;   " + conLog(this)); };
+audio.ondurationchange    = function() { console.log("event: durationchange;   " + conLog(this, 1)); }; // buffered
+audio.onemptied           = function() { console.log("event: emptied;          " + conLog(this)); };
+audio.onended             = function() { console.log("event: ended;            " + conLog(this)); };
+audio.onerror             = function() { console.error("event: error;          " + conErr(this)); };
+audio.onloadeddata        = function() { console.log("event: loadeddata;       " + conLog(this)); };
+audio.onloadedmetadata    = function() { console.log("event: loadedmetadata;   " + conLog(this)); };
+audio.onloadstart         = function() { console.log("event: loadstart;        " + conLog(this)); };
+audio.onmozaudioavailable = function() { console.log("event: mozaudioavailable;" + conLog(this)); };
+audio.onpause             = function() { console.log("event: pause;            " + conLog(this)); };
+audio.onplay              = function() { console.log("event: play;             " + conLog(this)); };
+audio.onplaying           = function() { console.log("event: playing;          " + conLog(this)); };
+audio.onprogress          = function() { console.log("event: progress;         " + conLog(this, 1)); }; // buffered
+audio.onratechange        = function() { console.log("event: ratechange;       " + conLog(this)); };
+audio.onstalled           = function() { console.log("event: stalled;          " + conLog(this)); };
+audio.onseeked            = function() { console.log("event: seeked;           " + conLog(this)); };
+audio.onseeking           = function() { console.log("event: seeking;          " + conLog(this)); };
+audio.onsuspend           = function() { console.log("event: suspend;          " + conLog(this)); };
+audio.ontimeupdate        = function() { console.log("event: timeupdate;       " + conLog(this, 2)); }; // played
+audio.onwaiting           = function() { console.log("event: waiting;          " + conLog(this)); };
+audio.onvolumechange      = function() { console.log("event: volumechange;     " + conLog(this)); };
+*/
+/*
+function theOtherAudio(audio_) { return audio_ === audio[0] ? audio[1] : audio[0]; }
+function thisAudioIndex(audio_) { return audio_ === audio[0] ? 0 : 1; }
+
+audio[0].onpause = audio[1].onpause = function() {
+	this.src_set_ = this.can_play_ = this.is_playing_ = false;
+	//this.removeAttribute("src");
+	//theOtherAudio(this).play();
+	//loadAudio(this);
+};
+
+audio[0].onplay = audio[1].onplay = function() {
+	this.is_playing_ = true;
+	//if (!theOtherAudio(this).src_set_)
+	//	loadAudio(theOtherAudio(this));
+}
+
+audio[0].oncanplay = audio[1].oncanplay = function() {
+	this.can_play_ = true;
+	//if (!theOtherAudio(this).is_playing_)
+	//	this.play();
+}
+*/
+//window.requestAnimationFrame = function( /* function FrameRequestCallback */ callback, /* DOMElement Element */ element ) {
+//	window.setTimeout( callback, 1 );
+//};
+
+var cnt = 0, mp3Playing = false;
+
+// start the loop				
+animate();
+
+function animate() {
+	requestAnimationFrame( animate );
+	render();
+}
+
+function render() {
+	if ((++cnt) % 2 != 0)
+		return;
+	if (checkApplet()) {
+		var sn_ = applet_.getSN();
+		if ( sn_ != sn && sn_ > 0 ) {
+			sn = sn_;
+			image[last_img = (last_img + 1) % 2].src = applet_.getDataURI();
+		}
+	}
+/*	if (!audio[0].src_set_)
+		loadAudio(audio[0]);
+	if (!audio[1].src_set_)
+		loadAudio(audio[1]);*/
+	if (mp3Playing)
+		mp3Playing = mp3applet_.isStreaming();
+	else if (checkMp3Applet() && mp3applet_.isPlaying() && mp3applet_.getSN() > 0) {
+		mp3Playing = true;
+		audio.src = "http://127.0.0.1:" + mp3applet_.startHttpServer();
+	}
+}
+</script>
+
+</body>
+</html>
