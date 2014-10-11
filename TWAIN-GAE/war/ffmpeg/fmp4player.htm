@@ -36,13 +36,13 @@ script>-->
   width="100" height="40">
   <param name="archive" value="img-applet.jar">
   <param name="code" value="img_applet.ImgApplet">
-  <param name="ffmpeg-re" value="">
-  <param name="ffmpeg-f:i" value="">
   <!--<param name="ffmpeg-i" value="rtmp://10.44.41.97/rtmp/webcam">-->
-  <!--<param name="ffmpeg-i" value="rtmp://europaplus.cdnvideo.ru:1935/europaplus-live/eptv_main.sdp">-->
+  <param name="ffmpeg-i" value="rtmp://europaplus.cdnvideo.ru:1935/europaplus-live/eptv_main.sdp">
   <!--<param name="ffmpeg-i" value="rtmp://85.132.78.6:1935/live/muztv.stream">-->
-  <param name="ffmpeg-i" value="http://83.139.104.101/Content/HLS/Live/Channel(Sk_1)/index.m3u8">
+  <!--<param name="ffmpeg-i" value="http://83.139.104.101/Content/HLS/Live/Channel(Sk_1)/index.m3u8">-->
   <!--<param name="ffmpeg-map" value="0:6">-->
+  <param name="ffmpeg-c:a" value="libmp3lame">
+  <param name="ffmpeg-c:v" value="mjpeg">
   <param name="ffmpeg-q:v" value="0.0">
   <!-- ‘-vsync parameter’
     Video sync method. For compatibility reasons old values can be specified as numbers. 
@@ -54,6 +54,10 @@ script>-->
     ‘-1, auto’ - Chooses between 1 and 2 depending on muxer capabilities. This is the default method.
   -->
   <param name="ffmpeg-vsync" value="0">
+  <param name="ffmpeg-movflags" value="frag_keyframe+empty_moov">
+  <param name="ffmpeg-vsync" value="0">
+  <param name="ffmpeg-f:o" value="mp4">
+  <param name="demux-fMP4" value="yes">
   <!--<param name="ffmpeg-muxpreload" value="10">
   <param name="ffmpeg-muxdelay" value="10">
   <param name="ffmpeg-loglevel" value="warning">-->
@@ -65,127 +69,71 @@ script>-->
       archive="img-applet.jar"
       code="img_applet.ImgApplet"
       pluginspage="http://java.com/download/"
-      ffmpeg-re=""
       ffmpeg-i="rtmp://europaplus.cdnvideo.ru:1935/europaplus-live/eptv_main.sdp"
+      ffmpeg-c:a="libmp3lame"
       ffmpeg-c:v="mjpeg"
       ffmpeg-q:v="0"
       ffmpeg-vsync="0"
-      ffmpeg-f:o="mjpeg"
-      ffmpeg-an=""
-      debug="no" />
-    </comment>
-  </object>
-
-<!-- 
-       ffmpeg-map="0:0"
-      ffmpeg-an=""
--->
- 
-<!-- 
-      ffmpeg-frames:d="3"
-      ffmpeg-c:a="copy"
-      ffmpeg-c:v="copy"
-      ffmpeg-f:o="mp4"
       ffmpeg-movflags="frag_keyframe+empty_moov"
-      ffmpeg-o="output.mp4"
- -->
-
-<!--
-<embed id="img-applet"
-       type="application/x-java-applet"
-       width="100" height="40" 
-       archive="img-applet.jar"
-       code="img_applet.ImgApplet"
-       pluginspage="http://java.com/download/"
-       rtmp="rtmp://localhost/rtmp/webcam"
-       qscale="0.0" />-->
-
-<img id="image0" width="1047" height="576" style="visibility: hidden; display: none;" />
-<img id="image1" width="1047" height="576" style="visibility: hidden; display: none;" />
-<br />
-<canvas id="videoImage" width="1047" height="576"></canvas>
-
-<object id="mp3-applet-ie"
-  classid="clsid:8AD9C840-044E-11D1-B3E9-00805F499D93"
-  width="100" height="40">
-  <param name="archive" value="img-applet.jar">
-  <param name="code" value="img_applet.ImgApplet">
-  <param name="ffmpeg-re" value="">
-  <param name="ffmpeg-f:i" value="">
-  <!--<param name="ffmpeg-i" value="rtmp://10.44.41.97/rtmp/webcam">-->
-  <!--<param name="ffmpeg-i" value="rtmp://europaplus.cdnvideo.ru:1935/europaplus-live/eptv_main.sdp">-->
-  <!--<param name="ffmpeg-i" value="rtmp://85.132.78.6:1935/live/muztv.stream">-->
-  <param name="ffmpeg-i" value="http://83.139.104.101/Content/HLS/Live/Channel(Sk_1)/index.m3u8">
-  <param name="ffmpeg-c:a" value="libmp3lame">
-  <param name="ffmpeg-f:o" value="mp3">
-  <param name="ffmpeg-vn" value="">
-  <param name="mp3-frames-per-chunk" value="5">
-  <param name="debug" value="yes">
-  <comment>
-    <embed id="mp3-applet"
-      type="application/x-java-applet"
-      width="100" height="40" 
-      archive="img-applet.jar"
-      code="img_applet.ImgApplet"
-      pluginspage="http://java.com/download/"
-      ffmpeg-re="no"
-      ffmpeg-i="rtmp://europaplus.cdnvideo.ru:1935/europaplus-live/eptv_main.sdp"
-      ffmpeg-c:a="libmp3lame"
-      ffmpeg-f:o="mp3"
-      ffmpeg-vn=""
-      mp3-frames-per-chunk="100"
+      ffmpeg-f:o="mp4"
+      demux-fMP4="yes"
       debug="yes" />
     </comment>
   </object>
 
 <!-- 
-      ffmpeg-o="europaplus.mp3" src="http://localhost/europaplus.mp3"
+      ffmpeg-map="0:0"
+      ffmpeg-an=""
+-->
+ 
+<!-- 
+      ffmpeg-re=""
+      ffmpeg-frames:d="3"
+      ffmpeg-c:a="copy"
+      ffmpeg-c:v="copy"
+      ffmpeg-f:o="mp4"
+      ffmpeg-y=""
+      ffmpeg-o="output.mp4"
+      buffer-grow-factor="1.0"
+      max-memory-buffer-count="30"
+      max-video-buffer-count="300"
+      max-video-buffer-count="0"
  -->
+
+<img id="image0" width="640" height="480" style="visibility: hidden; display: none;" />
+<img id="image1" width="640" height="480" style="visibility: hidden; display: none;" />
+<br />
+<canvas id="videoImage" width="640" height="480"></canvas>
  
 <!-- <audio id="audio0" autoplay>Your browser does not support the <code>audio</code> element.</audio>
 <audio id="audio1" autoplay></audio> -->
-<audio id="audio" autoplay="autoplay" controls="controls" crossorigin="anonymous">Your browser does not support the <code>audio</code> element.</audio>
+<audio id="audio" autoplay="autoplay" crossorigin="anonymous">Your browser does not support the <code>audio</code> element.</audio>
+
+<div id="msg" style="font-family:Courier New;"></div>
+
 <script>
 
-var width = 720, height = 540; // for the <embed> only
-
 // global variables
-var image, videoImage, videoImageContext, applet, applet_ie, applet_, sn = 0, last_img = -1;
-
-var audio, mp3applet, mp3applet_ie, mp3applet_, mp3sn = 0;
+var audio, image, videoImage, videoImageContext, applet, applet_ie, applet_, prev_sn = 0, last_img = -1;
 
 // assign variables to HTML elements
+audio = document.getElementById( 'audio' ); // [ document.getElementById( 'audio0' ), document.getElementById( 'audio1' ) ];
 image = [ document.getElementById( 'image0' ), document.getElementById( 'image1' ) ];
 videoImage = document.getElementById( 'videoImage' );
 videoImageContext = videoImage.getContext( '2d' );
 applet = document.getElementById( 'img-applet' );
 applet_ie = document.getElementById( 'img-applet-ie' );
 
-audio = document.getElementById( 'audio' ); // [ document.getElementById( 'audio0' ), document.getElementById( 'audio1' ) ];
-mp3applet = document.getElementById( 'mp3-applet' );
-mp3applet_ie = document.getElementById( 'mp3-applet-ie' );
-
 function checkApplet() {
 	if (!applet_) {
-		if (applet && applet.getSN) {
+		if (applet && applet.getSN)
 			applet_ = applet;
-			image[0].width = image[1].width = videoImage.width = width;
-			image[0].height = image[1].height = videoImage.height = height;
-		} else if (applet_ie && typeof(applet_ie.getSN) === "unknown")
+		else if (applet_ie && typeof(applet_ie.getSN) === "unknown")
 			applet_ = applet_ie;
 	}
 	return applet_;
 }
 
-function checkMp3Applet() {
-	if (!mp3applet_) {
-		if (mp3applet && mp3applet.getSN)
-			mp3applet_ = mp3applet;
-		else if (mp3applet_ie && typeof(mp3applet_ie.getSN) === "unknown")
-			mp3applet_ = mp3applet_ie;
-	}
-	return mp3applet_;
-}
 //background color if no video present
 videoImageContext.fillStyle = '#005337';
 videoImageContext.fillRect( 0, 0, videoImage.width, videoImage.height );				
@@ -193,21 +141,7 @@ videoImageContext.fillRect( 0, 0, videoImage.width, videoImage.height );
 image[0].onload = image[1].onload = function() {
 	videoImageContext.drawImage( this, 0, 0, videoImage.width, videoImage.height );
 };
-/*
-function loadAudio(audio_) {
-	if (checkMp3Applet()) {
-		var mp3sn_ = mp3applet_.getSN();
-		if ( mp3sn_ != mp3sn && mp3sn_ > 0 ) {
-			mp3sn = mp3sn_;
-			var src_ = audio_.src = mp3applet_.getDataURI();
-			audio_.src_set_ = true;
-			//if (!theOtherAudio(audio_).is_playing_)
-			//	audio_.play();
-			console.log("audio # " + thisAudioIndex(audio_) + ": frame.sn = " + mp3sn_ + "; audio.src = " + (!src_ || src_.length < 50 ? src_ : src_.substring(0, 50) + "..."));
-		}
-	}
-}
-*/
+
 /*
 function tns(ns) { switch (ns) { case 0: return "NETWORK_EMPTY"; case 1: return "NETWORK_IDLE"; case 2: return "NETWORK_LOADING"; case 3: return "NETWORK_NO_SOURCE"; default: return "UNKNOWN"; } }
 function trs(rs) { switch (rs) { case 0: return "HAVE_NOTHING"; case 1: return "HAVE_METADATA"; case 2: return "HAVE_CURRENT_DATA"; case 3: return "HAVE_FUTURE_DATA"; case 4: return "HAVE_ENOUGH_DATA"; default: return "UNKNOWN"; } }
@@ -254,34 +188,21 @@ audio.ontimeupdate        = function() { console.log("event: timeupdate;       "
 audio.onwaiting           = function() { console.log("event: waiting;          " + conLog(this)); };
 audio.onvolumechange      = function() { console.log("event: volumechange;     " + conLog(this)); };
 */
-/*
-function theOtherAudio(audio_) { return audio_ === audio[0] ? audio[1] : audio[0]; }
-function thisAudioIndex(audio_) { return audio_ === audio[0] ? 0 : 1; }
 
-audio[0].onpause = audio[1].onpause = function() {
-	this.src_set_ = this.can_play_ = this.is_playing_ = false;
-	//this.removeAttribute("src");
-	//theOtherAudio(this).play();
-	//loadAudio(this);
-};
+var cnt = 0, playing = false, timeScale = 0, timeLine = 0, initial_ts = 0, prev_ts = 0, videoInfo;
 
-audio[0].onplay = audio[1].onplay = function() {
-	this.is_playing_ = true;
-	//if (!theOtherAudio(this).src_set_)
-	//	loadAudio(theOtherAudio(this));
+var perf_prev = 0, perf_msg = document.getElementById("msg"), perf_msg_lines = 10;
+function add_perf_msg(txt) {
+	if (perf_msg.childNodes.length >= perf_msg_lines)
+		perf_msg.removeChild(perf_msg.firstChild);
+	perf_msg.insertAdjacentHTML('beforeend', "<div>" + txt + "</div>");
 }
-
-audio[0].oncanplay = audio[1].oncanplay = function() {
-	this.can_play_ = true;
-	//if (!theOtherAudio(this).is_playing_)
-	//	this.play();
+function check_performance() {
+	var perf_now = performance.now();
+	if (perf_prev > 0 && perf_now - perf_prev > 20)
+		add_perf_msg("# " + cnt + "; " + (perf_now - perf_prev).toFixed(2));
+	perf_prev = perf_now;
 }
-*/
-//window.requestAnimationFrame = function( /* function FrameRequestCallback */ callback, /* DOMElement Element */ element ) {
-//	window.setTimeout( callback, 1 );
-//};
-
-var cnt = 0, mp3Playing = false;
 
 // start the loop				
 animate();
@@ -291,25 +212,60 @@ function animate() {
 	render();
 }
 
+audio.ontimeupdate = function() {
+	if (this.played != null && this.played.length > 0 && timeLine > 0)
+		timeLine = performance.now() - (this.played.end(0) - this.played.start(0)) * 1000;
+};
+
+function startAudioIfAppletIsPlaying() {
+	if (applet_.isPlaying() && applet_.getSN() > 0) {
+		playing = true;
+		audio.src = applet_.startHttpServer();
+	}	
+}
+
+function getVideoTrackInfo() {
+	videoInfo = applet_.getVideoTrackInfo();
+	timeScale = videoInfo.timeScale;
+	if (videoInfo.width > 0)
+		image[0].width = image[1].width = videoImage.width = videoInfo.width;
+	if (videoInfo.height > 0)
+		image[0].height = image[1].height = videoImage.height = videoInfo.height;
+}
+
 function render() {
-	//if ((++cnt) % 2 != 0)
-	//	return;
+	cnt++;
+	//check_performance();
 	if (checkApplet()) {
-		var sn_ = applet_.getSN();
-		if ( sn_ != sn && sn_ > 0 ) {
-			sn = sn_;
-			image[last_img = (last_img + 1) % 2].src = applet_.getDataURI();
+		var sn_ = applet_.getVideoSN();
+		if (/*sn_ != prev_sn &&*/ sn_ > 0) {
+			if (!videoInfo)
+				getVideoTrackInfo();
+			var ts_ = applet_.getVideoTimestamp(),
+				tl_ = performance.now(),
+				dt_ = (ts_ - initial_ts) * 1000 / timeScale;
+			//if (prev_ts > 0 && (ts_ - prev_ts) * 1000 / timeScale > 100)
+			//	add_perf_msg("sn = " + sn_ + "; ts = " + (ts_ - prev_ts));
+			if (timeScale > 0 && (ts_ == 0 || timeLine == 0 || dt_ <= tl_ - timeLine)) {
+				if (ts_ == 0 || timeLine == 0) {
+					timeLine = tl_;
+					initial_ts = ts_;
+				}
+				prev_ts = ts_;
+				prev_sn = sn_;
+				//add_perf_msg("sn = " + sn_ + "; ts = " + ts_);
+				image[last_img = (last_img + 1) % 2].src = applet_.getVideoDataURI();
+			}
+		} else if (videoInfo) {
+			timeScale = timeLine = initial_ts = prev_ts = 0;
+			videoInfo = null;
 		}
 	}
-/*	if (!audio[0].src_set_)
-		loadAudio(audio[0]);
-	if (!audio[1].src_set_)
-		loadAudio(audio[1]);*/
-	if (mp3Playing)
-		mp3Playing = mp3applet_.isStreaming();
-	else if (checkMp3Applet() && mp3applet_.isPlaying() && mp3applet_.getSN() > 0) {
-		mp3Playing = true;
-		audio.src = mp3applet_.startHttpServer();
+	if (playing) {
+		if (!(playing = applet_.isStreaming()))
+			startAudioIfAppletIsPlaying();
+	} else if (checkApplet() && applet_.isPlaying() && applet_.getSN() > 0) {
+		startAudioIfAppletIsPlaying();
 	}
 }
 </script>
