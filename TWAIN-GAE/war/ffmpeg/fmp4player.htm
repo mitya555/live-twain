@@ -55,7 +55,6 @@ script>-->
   -->
   <param name="ffmpeg-vsync" value="0">
   <param name="ffmpeg-movflags" value="frag_keyframe+empty_moov">
-  <param name="ffmpeg-vsync" value="0">
   <param name="ffmpeg-f:o" value="mp4">
   <param name="demux-fMP4" value="yes">
   <!--<param name="ffmpeg-muxpreload" value="10">
@@ -107,7 +106,7 @@ script>-->
  
 <!-- <audio id="audio0" autoplay>Your browser does not support the <code>audio</code> element.</audio>
 <audio id="audio1" autoplay></audio> -->
-<audio id="audio" autoplay="autoplay" crossorigin="anonymous">Your browser does not support the <code>audio</code> element.</audio>
+<audio id="audio" autoplay="autoplay" crossorigin="anonymous">Your browser does not support the <code>audio</code> element.</audio><!-- controls="controls" -->
 
 <div id="msg" style="font-family:Courier New;"></div>
 
@@ -189,7 +188,7 @@ audio.onwaiting           = function() { console.log("event: waiting;          "
 audio.onvolumechange      = function() { console.log("event: volumechange;     " + conLog(this)); };
 */
 
-var cnt = 0, playing = false, timeScale = 0, timeLine = 0, initial_ts = 0, prev_ts = 0, videoInfo;
+var cnt = 0, playing = false, timeScale = 0, timeLine = 0, initial_ts = 0, prev_ts = 0, videoInfo, hasAudio = false;
 
 var perf_prev = 0, perf_msg = document.getElementById("msg"), perf_msg_lines = 10;
 function add_perf_msg(txt) {
@@ -231,6 +230,7 @@ function getVideoTrackInfo() {
 		image[0].width = image[1].width = videoImage.width = videoInfo.width;
 	if (videoInfo.height > 0)
 		image[0].height = image[1].height = videoImage.height = videoInfo.height;
+	hasAudio = videoInfo.hasAudio;
 }
 
 function render() {
@@ -241,19 +241,24 @@ function render() {
 		if (/*sn_ != prev_sn &&*/ sn_ > 0) {
 			if (!videoInfo)
 				getVideoTrackInfo();
-			var ts_ = applet_.getVideoTimestamp(),
-				tl_ = performance.now(),
-				dt_ = (ts_ - initial_ts) * 1000 / timeScale;
-			//if (prev_ts > 0 && (ts_ - prev_ts) * 1000 / timeScale > 100)
-			//	add_perf_msg("sn = " + sn_ + "; ts = " + (ts_ - prev_ts));
-			if (timeScale > 0 && (ts_ == 0 || timeLine == 0 || dt_ <= tl_ - timeLine)) {
-				if (ts_ == 0 || timeLine == 0) {
-					timeLine = tl_;
-					initial_ts = ts_;
+			if (hasAudio) {
+				var ts_ = applet_.getVideoTimestamp(),
+					tl_ = performance.now(),
+					dt_ = (ts_ - initial_ts) * 1000 / timeScale;
+				//if (prev_ts > 0 && (ts_ - prev_ts) * 1000 / timeScale > 100)
+				//	add_perf_msg("sn = " + sn_ + "; ts = " + (ts_ - prev_ts));
+				if (timeScale > 0 && (ts_ == 0 || timeLine == 0 || dt_ <= tl_ - timeLine)) {
+					if (ts_ == 0 || timeLine == 0) {
+						timeLine = tl_;
+						initial_ts = ts_;
+					}
+					prev_ts = ts_;
+					prev_sn = sn_;
+					//add_perf_msg("sn = " + sn_ + "; ts = " + ts_);
+					image[last_img = (last_img + 1) % 2].src = applet_.getVideoDataURI();
 				}
-				prev_ts = ts_;
+			} else if (sn_ > prev_sn) {
 				prev_sn = sn_;
-				//add_perf_msg("sn = " + sn_ + "; ts = " + ts_);
 				image[last_img = (last_img + 1) % 2].src = applet_.getVideoDataURI();
 			}
 		} else if (videoInfo) {
