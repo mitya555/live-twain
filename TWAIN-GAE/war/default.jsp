@@ -53,6 +53,7 @@ private String imgsize(int w,int h,int bpp){
 <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.css" />
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.66.0-2013.10.09/jquery.blockUI.min.js"></script>
 <script type="text/javascript">
 if (!String.prototype.endsWith) {
 	(function() {
@@ -322,11 +323,16 @@ function create_links(data) {
 	}
 	if (data.img_blob_key.length > 0) {
 		$('<hr /><div>' + pdf_link() + '</div>').appendTo('div#file-links');
-		$(pdf_link()).appendTo('div#applet-container');
+		$('<div>' + pdf_link() + '</div><hr />').prependTo('div#file-links');
 	}
 	set_stf(true);
 }
-function pdf_link() { return '<a href="javascript://" onclick="javascript:form_submit();" target="_blank" style="color:black;font-weight:bold;text-decoration:none;">PDF</a>'; }
+function pdf_link() {
+	return '<a href="javascript://" onclick="javascript:form_submit();" target="_blank" ' + 
+		'style="color:black;font-weight:bold;text-decoration:none;margin-left:20px;">PDF</a>' +
+		'<a href="javascript://" onclick="javascript:clear_all();" ' + 
+		'style="color:black;font-weight:bold;text-decoration:none;margin-left:50px;">Clear</a>';
+}
 function display_img_blob_info(ii, lpad_) {
 	var sz = ii.w + "x" + ii.h + ";";
 	if (lpad_)
@@ -358,6 +364,23 @@ function form_submit() {
 		$stf[i].value = this.checked ? 'both' : '';
 	});
 	$('form#pages')[0].submit();
+}
+function clear_all() {
+	$('#scan-applet').css('visibility', 'hidden');
+	$.blockUI();
+	$.ajax({
+		url: '/twain?clear=yes',
+		success: function() {
+			$('div#file-links').empty();
+		},
+		complete: function() {
+			$.unblockUI({
+				onUnblock: function() {
+					$('#scan-applet').css('visibility', 'visible');
+				}
+			});
+		}
+	});
 }
 function scan_success_(num, complete, data) {
 	if (num > 0)
@@ -402,13 +425,14 @@ function scan_params_(i) {
 /* #scale-factor-slider { font-size: 0.6em; } */
 div.crop-frame { border: 2px dotted red; }
 span.crop-span { white-space: nowrap; font-family: Arial; font-size: 8pt; }
+span.pipe-delim { font-size: 20px; /* font-weight: bold; */ }
 </style>
 </head>
 <body style="font-family:Arial;font-size:9pt;">
 <div style="text-align:right;"><a href='http://icons8.com/license/' style='font-size:8pt;font-style:italic;color:green;'>icons8</a></div>
 <div id="applet-container">
 <applet code="TwainApplet.class" archive="TwainApplet.jar" id="scan-applet" style="vertical-align:bottom;"
-	width="200" height="36" class="image-input" MAYSCRIPT><%--
+	width="150" height="36" class="image-input" MAYSCRIPT><%--
 	width="150" height="26" --%>
 	<param name="permissions" value="all-permissions" />
 	<%--<param name="ImageHandler" value="<%= blobstoreService.createUploadUrl("/twain") %>" /> --%>
@@ -455,7 +479,7 @@ span.crop-span { white-space: nowrap; font-family: Arial; font-size: 8pt; }
 		<option value="8192">8M</option>
 		<option value="16384">16M</option>
 		<option value="32768">32M</option>
-	</select> &nbsp;|&nbsp; 
+	</select> &nbsp;<span class="pipe-delim">|</span>&nbsp; 
 </span>
 <%--<hr />--%>
 Page: 
@@ -465,7 +489,7 @@ Page:
 			style="/*vertical-align:2px;*/">
 		<option>portrait</option>
 		<option>landscape</option>
-	</select> &nbsp;|&nbsp; 
+	</select> &nbsp;<span class="pipe-delim">|</span>&nbsp; 
 </span>
 Image: 
 <span style="white-space:nowrap;">Rotate: 
@@ -476,7 +500,7 @@ Image:
 		<option value="90">90&#xb0; CW</option>
 		<option value="-90">90&#xb0; CCW</option>
 		<option value="180">180&#xb0;</option>
-	</select>&nbsp;
+	</select> &nbsp; &nbsp; 
 </span>
 <span style="white-space:nowrap;">Scale to fit: 
 	<label for="scale-to-fit-down">down: </label>
@@ -490,10 +514,10 @@ Image:
 	<input type="checkbox" id="scale-to-fit-up" 
 			onchange="javascript:set_stf(false);page_preview_onchange_all();" 
 			style="vertical-align:-1px;" /><%-- <label for="scale-to-fit-up">before PDF</label>--%>
+</span> &nbsp; &nbsp; 
 </span>
-</span> &nbsp; &nbsp;
 </div>
-<hr>
+<br />
 <span id="scan-message"></span>
 <form id="pages" action="/twain?newpdf=yes" method="post" target="_blank">
 <div id="file-links"><%--<%

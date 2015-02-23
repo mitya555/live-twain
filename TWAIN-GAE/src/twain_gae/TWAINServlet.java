@@ -145,6 +145,9 @@ public class TWAINServlet extends HttpServlet {
 		else if (req.getParameter("newpdf") != null) {
 			newPdf(req, resp);
 		}
+		else if (req.getParameter("clear") != null) {
+			deleteSessionBlobs(req);
+		}
 		else {
 			HttpSession ses = req.getSession();
 			
@@ -155,29 +158,31 @@ public class TWAINServlet extends HttpServlet {
 			int image_num = req.getParameter("image_num") != null ?
 					Integer.parseInt(req.getParameter("image_num")) : -1;
 
-			if (image_num == 0 || image_num == 1)
-				ses.setAttribute("invalidate-cache", true);
+//			if (image_num == 0 || image_num == 1)
+//				ses.setAttribute("invalidate-cache", true);
 			
 			BlobInfo file;
 			List<BlobInfo> bi = null;
 			if (image_num > 0)
 				bi = blobstoreService.getBlobInfos(req).get("image");
 			if (bi != null && bi.size() > 0 && (file = bi.get(0)) != null && file.getSize() > 0) {
-				if (ses.getAttribute("invalidate-cache") != null) {
-					// delete image blobs
-					if (bkeys.size() > 0) {
-						deleteBlobs(bkeys, this.blobstoreService, this.datastoreService);
-					}
-					bkeys.clear();
-					bsizes.clear();
-					binfo.clear();
-//					// delete old PDF blob
-//					BlobKey old_pdf_blob = replacePdfBlob(ses, null);
-//					if (old_pdf_blob != null)
-//						blobstoreService.delete(old_pdf_blob);
-					// drop the "invalidate-cache" session variable
-					ses.removeAttribute("invalidate-cache");
-				}
+				
+//				if (ses.getAttribute("invalidate-cache") != null) {
+//					// delete image blobs
+//					if (bkeys.size() > 0) {
+//						deleteBlobs(bkeys, this.blobstoreService, this.datastoreService);
+//					}
+//					bkeys.clear();
+//					bsizes.clear();
+//					binfo.clear();
+////					// delete old PDF blob
+////					BlobKey old_pdf_blob = replacePdfBlob(ses, null);
+////					if (old_pdf_blob != null)
+////						blobstoreService.delete(old_pdf_blob);
+//					// drop the "invalidate-cache" session variable
+//					ses.removeAttribute("invalidate-cache");
+//				}
+				
 				BlobKey bk = file.getBlobKey();
 				bkeys.add(bk);
 				Entity ds_bk = new Entity("_BLOB_REF", bk.getKeyString(), createSessionKey(ses));
@@ -235,6 +240,28 @@ public class TWAINServlet extends HttpServlet {
 			).asIterable()));
 	}
 
+	private void deleteSessionBlobs(HttpServletRequest req) {
+		
+		HttpSession ses = req.getSession();
+		
+		List<BlobKey> bkeys = sessionList(ses, "img-blob-key");
+		List<Long> bsizes = sessionList(ses, "img-blob-size");
+		List<ImageInfo> binfo = sessionList(ses, "img-blob-info");
+
+		// delete image blobs
+		if (bkeys.size() > 0) {
+			deleteBlobs(bkeys, this.blobstoreService, this.datastoreService);
+		}
+		// clear lists
+		bkeys.clear();
+		bsizes.clear();
+		binfo.clear();
+		// save lists back to Session 
+		ses.setAttribute("img-blob-key", bkeys);
+		ses.setAttribute("img-blob-size", bsizes);
+		ses.setAttribute("img-blob-info", binfo);
+	}
+	
 	private void newPdf(HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, MalformedURLException, ServletException {
 
@@ -390,6 +417,9 @@ public class TWAINServlet extends HttpServlet {
 			throws ServletException, IOException {
 		if (req.getParameter("newpdf") != null) {
 			newPdf(req, resp);
+		}
+		else if (req.getParameter("clear") != null) {
+			deleteSessionBlobs(req);
 		}
 		else {
 			BlobKey blobKey = new BlobKey(req.getParameter("blob-key"));
