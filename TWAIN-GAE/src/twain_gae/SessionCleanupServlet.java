@@ -66,10 +66,10 @@ public class SessionCleanupServlet extends HttpServlet {
 	}
 
 	public static void deleteSessionBlobs(Key sessionKey, BlobstoreService blobstore, DatastoreService datastore) {
-		PreparedQuery query2 = datastore.prepare(new Query("_BLOB_REF").setAncestor(sessionKey));
-		for (Entity blob_ref : query2.asIterable())
-			blobstore.delete((BlobKey)blob_ref.getProperty("_blobkey"));
-		datastore.delete(new KeyIterable(query2.asIterable()));
+		for (Entity entity : datastore.prepare(new Query("_BLOB_REF").setAncestor(sessionKey).setKeysOnly()).asIterable()) {
+			blobstore.delete(new BlobKey(entity.getKey().getName()));
+			datastore.delete(entity.getKey());
+		}
 	}
 
 	private void sendForm(String actionUrl, HttpServletResponse response) {

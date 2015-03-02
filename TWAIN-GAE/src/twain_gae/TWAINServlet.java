@@ -10,7 +10,7 @@ import java.io.PrintWriter;
 //import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 //import java.net.URL;
-import java.util.ArrayList;
+//import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 //import java.util.Map;
@@ -26,11 +26,15 @@ import com.google.appengine.api.blobstore.BlobstoreService;
 import com.google.appengine.api.blobstore.BlobstoreServiceFactory;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.EmbeddedEntity;
 import com.google.appengine.api.datastore.Entity;
+//import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.datastore.Query.FilterOperator;
-import com.google.appengine.api.datastore.Query.FilterPredicate;
+//import com.google.appengine.api.datastore.PreparedQuery;
+//import com.google.appengine.api.datastore.Query.FilterOperator;
+//import com.google.appengine.api.datastore.Query.FilterPredicate;
+import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.appengine.api.images.ImagesService;
 import com.google.appengine.api.images.ImagesServiceFactory;
 import com.google.appengine.api.images.Transform;
@@ -46,6 +50,8 @@ import com.itextpdf.text.PageSize;
 //import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.pdf.PdfTemplate;
 import com.itextpdf.text.pdf.PdfWriter;
+
+import static com.google.appengine.api.datastore.FetchOptions.Builder.*;
 
 @SuppressWarnings("serial")
 public class TWAINServlet extends HttpServlet {
@@ -134,91 +140,52 @@ public class TWAINServlet extends HttpServlet {
 
 //		boolean isMultiPart = ServletFileUpload.isMultipartContent(req);
 		
-		if (req.getParameter("pdf") != null) {
-			BlobInfo file;
-			List<BlobInfo> bi = blobstoreService.getBlobInfos(req).get("file");
-			if (bi != null && bi.size() > 0 && (file = bi.get(0)) != null && file.getSize() > 0) {
-				// return PDF blob key
-				resp.getWriter().print(file.getBlobKey().getKeyString());
-			}
-		}
-		else if (req.getParameter("newpdf") != null) {
+		if (req.getParameter("newpdf") != null) {
 			newPdf(req, resp);
 		}
 		else if (req.getParameter("clear") != null) {
-			deleteSessionBlobs(req);
+			deleteSessionBlobs(req.getSession(), this.blobstoreService, this.datastoreService);
 		}
 		else {
-			HttpSession ses = req.getSession();
 			
-			List<BlobKey> bkeys = sessionList(ses, "img-blob-key");
-			List<Long> bsizes = sessionList(ses, "img-blob-size");
-			List<ImageInfo> binfo = sessionList(ses, "img-blob-info");
+			HttpSession session = req.getSession();
 
-			int image_num = req.getParameter("image_num") != null ?
-					Integer.parseInt(req.getParameter("image_num")) : -1;
+			int image_num = req.getParameter("image_num") != null ? Integer.parseInt(req.getParameter("image_num")) : -1;
 
 //			if (image_num == 0 || image_num == 1)
 //				ses.setAttribute("invalidate-cache", true);
 			
-			BlobInfo file;
-			List<BlobInfo> bi = null;
-			if (image_num > 0)
-				bi = blobstoreService.getBlobInfos(req).get("image");
-			if (bi != null && bi.size() > 0 && (file = bi.get(0)) != null && file.getSize() > 0) {
-				
-//				if (ses.getAttribute("invalidate-cache") != null) {
-//					// delete image blobs
-//					if (bkeys.size() > 0) {
-//						deleteBlobs(bkeys, this.blobstoreService, this.datastoreService);
-//					}
-//					bkeys.clear();
-//					bsizes.clear();
-//					binfo.clear();
-////					// delete old PDF blob
-////					BlobKey old_pdf_blob = replacePdfBlob(ses, null);
-////					if (old_pdf_blob != null)
-////						blobstoreService.delete(old_pdf_blob);
-//					// drop the "invalidate-cache" session variable
-//					ses.removeAttribute("invalidate-cache");
-//				}
-				
-				BlobKey bk = file.getBlobKey();
-				bkeys.add(bk);
-				Entity ds_bk = new Entity("_BLOB_REF", bk.getKeyString(), createSessionKey(ses));
-				ds_bk.setProperty("_blobkey", bk);
-				datastoreService.put(ds_bk);
-				bsizes.add(file.getSize());
-				binfo.add(new ImageInfo(
-						req.getParameter("w"), req.getParameter("h"), req.getParameter("bpp"),
-						req.getParameter("w2"), req.getParameter("h2"), req.getParameter("bpp2")));
-				// save lists back to Session 
-				ses.setAttribute("img-blob-key", bkeys);
-				ses.setAttribute("img-blob-size", bsizes);
-				ses.setAttribute("img-blob-info", binfo);
+			if (image_num > 0) {
+				List<BlobInfo> files = blobstoreService.getBlobInfos(req).get("image");
+				if (files != null)
+					for (BlobInfo file : files)
+						if (file != null && file.getSize() > 0) {
+//							if (session.getAttribute("invalidate-cache") != null) {
+//								// delete image blobs
+//								deleteBlobs(session, this.blobstoreService, this.datastoreService);
+//								// drop the "invalidate-cache" session variable
+//								session.removeAttribute("invalidate-cache");
+//							}
+							BlobKey bk = file.getBlobKey();
+							Entity ds_bk = new Entity("_BLOB_REF", bk.getKeyString(), createSessionKey(session));
+							ds_bk.setProperty("_filesize", file.getSize());
+							ds_bk.setProperty("_imginfo", new ImageInfo(
+									req.getParameter("w"), req.getParameter("h"), req.getParameter("bpp"),
+									req.getParameter("w2"), req.getParameter("h2"), req.getParameter("bpp2")).getEmbeddedEntity());
+							long _next_ordinal = 0;
+							for (Entity bref : datastoreService.prepare(
+									new Query("_BLOB_REF").setAncestor(createSessionKey(session))
+									.addSort("_ordinal", SortDirection.DESCENDING)).asIterable()) {
+								_next_ordinal = (Long)bref.getProperty("_ordinal") + 1; 
+							}
+							ds_bk.setProperty("_ordinal", _next_ordinal);
+							datastoreService.put(ds_bk);
+						}
 			}
 	
 			if (req.getParameter("complete") != null) {
-//				try {
-//					HttpPost post = new HttpPost(
-//							new URL(blobstoreService.createUploadUrl("/twain")), null);
-//					post.addParam("pdf").writeBytes("True");
-//					java.io.OutputStream outstream = post.addParam("file", "test.pdf", "application/pdf"); 
-//					generatePdf(req, bkeys, bsizes, outstream);
-//					StringBuilder pdf_blob_key = post.send(true, new StringBuilder());
-//					// delete old PDF blob and save new one in the session
-//					BlobKey old_pdf_blob = replacePdfBlob(ses, "" + pdf_blob_key);
-//					if (old_pdf_blob != null)
-//						blobstoreService.delete(old_pdf_blob);
-					// return images and PDF blob keys in JSON format
-					getBlobsJson(resp.getWriter(), bkeys, binfo/*, pdf_blob_key*/);
-//				}
-//				catch (Throwable e) {
-//					e.printStackTrace();
-////					resp.sendError(500, e.getMessage());
-//					// return image blob keys in JSON format
-//					getBlobsJson(resp.getWriter(), bkeys, binfo, pdf_blob_key);
-//				}
+					// return images blob keys and info in JSON format
+					getBlobsJson(resp.getWriter(), getBlobRefs(session, this.datastoreService));
 			}
 			else
 				resp.getWriter().print("\"" + blobstoreService.createUploadUrl("/twain") + "\"");
@@ -226,54 +193,31 @@ public class TWAINServlet extends HttpServlet {
 //		resp.setContentType("text/plain");
 //		resp.getWriter().println("Hello, world");
 	}
+	
+	public static List<Entity> getBlobRefs(HttpSession session, DatastoreService datastore) {
+		return datastore.prepare(
+				new Query("_BLOB_REF").setAncestor(createSessionKey(session))
+				.addSort("_ordinal")).asList(withDefaults());
+	}
 
 	public static Key createSessionKey(HttpSession session) {
 		return KeyFactory.createKey("_ah_SESSION", "_ahs" + session.getId());
 	}
 	
-	public static void deleteBlobs(List<BlobKey> bkeys, BlobstoreService blobstore, DatastoreService datastore) {
-		blobstore.delete(bkeys.toArray(new BlobKey[0]));
-		datastore.delete(new KeyIterable(datastore.prepare(
-				new Query("_BLOB_REF")
-				.setFilter(new FilterPredicate("_blobkey", FilterOperator.IN, bkeys))
-				.setKeysOnly()
-			).asIterable()));
-	}
-
-	private void deleteSessionBlobs(HttpServletRequest req) {
-		
-		HttpSession ses = req.getSession();
-		
-		List<BlobKey> bkeys = sessionList(ses, "img-blob-key");
-		List<Long> bsizes = sessionList(ses, "img-blob-size");
-		List<ImageInfo> binfo = sessionList(ses, "img-blob-info");
-
-		// delete image blobs
-		if (bkeys.size() > 0) {
-			deleteBlobs(bkeys, this.blobstoreService, this.datastoreService);
+	public static void deleteSessionBlobs(HttpSession session, BlobstoreService blobstore, DatastoreService datastore) {
+		for (Entity entity : datastore.prepare(new Query("_BLOB_REF").setAncestor(createSessionKey(session)).setKeysOnly()).asIterable()) {
+			blobstore.delete(new BlobKey(entity.getKey().getName()));
+			datastore.delete(entity.getKey());
 		}
-		// clear lists
-		bkeys.clear();
-		bsizes.clear();
-		binfo.clear();
-		// save lists back to Session 
-		ses.setAttribute("img-blob-key", bkeys);
-		ses.setAttribute("img-blob-size", bsizes);
-		ses.setAttribute("img-blob-info", binfo);
 	}
 	
 	private void newPdf(HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, MalformedURLException, ServletException {
 
 		resp.setContentType("application/pdf");
-		
-		HttpSession ses = req.getSession();
-		
-		List<BlobKey> bkeys = sessionList(ses, "img-blob-key");
-		List<Long> bsizes = sessionList(ses, "img-blob-size");
 
 		try {
-			generatePdf(req, bkeys, bsizes, resp.getOutputStream());
+			generatePdf(req, getBlobRefs(req.getSession(), this.datastoreService), resp.getOutputStream());
 		}
 		catch (DocumentException ex) {
 			ex.printStackTrace();
@@ -281,24 +225,24 @@ public class TWAINServlet extends HttpServlet {
 		}
 	}
 
-	private void generatePdf(HttpServletRequest req, List<BlobKey> bkeys,
-			List<Long> bsizes, java.io.OutputStream outstream)
-			throws DocumentException, IOException, MalformedURLException {
+	private void generatePdf(HttpServletRequest req, List<Entity> brefs, 
+			java.io.OutputStream outstream) throws DocumentException, IOException, MalformedURLException {
+		
 		Document document = initDoc(new Document(), "landscape".equalsIgnoreCase(req.getParameterValues("orientation")[0]));
 		PdfWriter writer = PdfWriter.getInstance(document, outstream);
 		writer.setCloseStream(false);
 		document.open();
 //		document.add(new Paragraph("This is a paragraph"));
-		for (int i = 0; i < bkeys.size(); i++) {
+		for (int i = 0; i < brefs.size(); i++) {
 			if (i != 0) {
 				final String orientation = req.getParameterValues("orientation")[i];
 				if (strNotEmpty(orientation))
 					document.setPageSize("landscape".equalsIgnoreCase(orientation) ? PageSize.LETTER.rotate() : PageSize.LETTER);
 				document.newPage();
 			}
-//			byte[] imgb = ImagesServiceFactory.makeImageFromBlob(bkeys.get(i)).getImageData();
-//			byte[] imgb = blobstoreService.fetchData(bkeys.get(i), 0L, bsizes.get(i));
-			byte[] imgb = readBlobData(bkeys.get(i), bsizes.get(i));
+//			byte[] imgb = ImagesServiceFactory.makeImageFromBlob(new BlobKey(brefs.get(i).getKey().getName())).getImageData();
+//			byte[] imgb = blobstoreService.fetchData(bkeys.get(i), 0L, (Long)brefs.get(i).getProperty("_filesize"));
+			byte[] imgb = readBlobData(new BlobKey(brefs.get(i).getKey().getName()), (Long)brefs.get(i).getProperty("_filesize"));
 			Image img = Image.getInstance(imgb);
 			final String crop = req.getParameterValues("crop-data")[i];
 			if (strNotEmpty(crop)) {
@@ -340,24 +284,20 @@ public class TWAINServlet extends HttpServlet {
 		document.close();
 	}
 
-	public static void getBlobsJson(PrintWriter writer, List<BlobKey> bkeys, List<ImageInfo> binfo/*, Object pdf_blob_key*/) {
-		// return images and PDF blob keys in JSON format
+	public static void getBlobsJson(PrintWriter writer, List<Entity> brefs) {
+		// return images blob keys and info in JSON format
 		writer.print("{img_blob_key:[");
-		for (int i = 0; i < bkeys.size(); i++)
+		for (int i = 0; i < brefs.size(); i++)
 			writer.print((i > 0 ? "," : "") + 
-					"'" + bkeys.get(i).getKeyString() + "'");
+					"'" + brefs.get(i).getKey().getName() + "'");
 		writer.print("]");
 		writer.print(",img_blob_info:[");
-		for (int i = 0; i < binfo.size(); i++)
+		for (int i = 0; i < brefs.size(); i++) {
+			ImageInfo ii = new ImageInfo((EmbeddedEntity)brefs.get(i).getProperty("_imginfo"));
 			writer.print((i > 0 ? "," : "") + 
-					"{w:" + binfo.get(i).w +
-					",h:" + binfo.get(i).h +
-					",bpp:" + binfo.get(i).bpp +
-					",w2:" + binfo.get(i).w2 +
-					",h2:" + binfo.get(i).h2 +
-					",bpp2:" + binfo.get(i).bpp2 + "}");
+					"{w:" + ii.w + ",h:" + ii.h + ",bpp:" + ii.bpp + ",w2:" + ii.w2 + ",h2:" + ii.h2 + ",bpp2:" + ii.bpp2 + "}");
+		}
 		writer.print("]");
-//		writer.print(",pdf_blob_key:'" + (pdf_blob_key != null ? pdf_blob_key : "") + "'");
 		writer.print("}");
 	}
 
@@ -386,40 +326,14 @@ public class TWAINServlet extends HttpServlet {
 	    return res.toByteArray();
 	}
 
-//	private static final String pdf_ses_var_name = "pdf-blob-key";
-//
-//	public static BlobKey getPdfBlobKey(HttpSession ses) {
-//		BlobKey res = null;
-//		if (ses.getAttribute(pdf_ses_var_name) != null &&
-//				(ses.getAttribute(pdf_ses_var_name) instanceof BlobKey))
-//			res = (BlobKey)ses.getAttribute(pdf_ses_var_name);
-//		return res;
-//	}
-//
-//	public static BlobKey replacePdfBlob(HttpSession ses, String pdf_blob_key) {
-//		BlobKey res = getPdfBlobKey(ses);
-//		if (pdf_blob_key != null)
-//			ses.setAttribute(pdf_ses_var_name, new BlobKey(pdf_blob_key));
-//		else
-//			ses.removeAttribute(pdf_ses_var_name);
-//		return res;
-//	}
 
-	@SuppressWarnings("unchecked")
-	public static <T> List<T> sessionList(HttpSession ses, final String ses_var_name) {
-		if (ses.getAttribute(ses_var_name) == null ||
-				!(ses.getAttribute(ses_var_name) instanceof List))
-			ses.setAttribute(ses_var_name, new ArrayList<T>());
-		return (List<T>)ses.getAttribute(ses_var_name);
-	}
-
-	public void doGet(HttpServletRequest req, HttpServletResponse resp)
-			throws ServletException, IOException {
+	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		
 		if (req.getParameter("newpdf") != null) {
 			newPdf(req, resp);
 		}
 		else if (req.getParameter("clear") != null) {
-			deleteSessionBlobs(req);
+			deleteSessionBlobs(req.getSession(), this.blobstoreService, this.datastoreService);
 		}
 		else {
 			BlobKey blobKey = new BlobKey(req.getParameter("blob-key"));
