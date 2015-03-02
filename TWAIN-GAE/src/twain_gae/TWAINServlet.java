@@ -133,8 +133,6 @@ public class TWAINServlet extends HttpServlet {
 	
 	private BlobstoreService blobstoreService = BlobstoreServiceFactory.getBlobstoreService();
 	private DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
-	
-	private static Object _lock = new Object();
 
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -183,9 +181,8 @@ public class TWAINServlet extends HttpServlet {
 										img.getFormat().toString(), file.getSize()).getEmbeddedEntity());
 							}
 							long _next_ordinal;
-							synchronized (_lock) {
-								session.setAttribute("img-cnt", _next_ordinal = session.getAttribute("img-cnt") != null ? (Long)session.getAttribute("img-cnt") + 1L : 0L);
-							}
+							session.setAttribute("img-cnt", _next_ordinal = 
+								session.getAttribute("img-cnt") != null ? (Long)session.getAttribute("img-cnt") + 1L : 0L);
 							ds_bk.setProperty("_ordinal", _next_ordinal);
 							datastoreService.put(ds_bk);
 						}
