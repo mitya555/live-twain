@@ -5,6 +5,8 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
 <%@ page import="com.google.appengine.api.blobstore.BlobstoreServiceFactory" %>
 <%@ page import="com.google.appengine.api.blobstore.BlobstoreService" %>
+<%@ page import="com.google.appengine.api.datastore.DatastoreServiceFactory" %>
+<%@ page import="com.google.appengine.api.datastore.DatastoreService" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.google.appengine.api.blobstore.BlobKey" %>
 <%@ page import="com.itextpdf.text.Document" %>
@@ -53,7 +55,18 @@ private String imgsize(int w,int h,int bpp){
 <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.css" />
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.66.0-2013.10.09/jquery.blockUI.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.66.0-2013.10.09/jquery.blockUI.min.js"></script>
+<script type="text/javascript">
+$.extend($.blockUI.defaults.css, {
+	border: 'none', 
+	padding: '15px', 
+	backgroundColor: '#000', 
+	'-webkit-border-radius': '10px', 
+	'-moz-border-radius': '10px', 
+	opacity: .5, 
+	color: '#fff' 
+});
+</script>
 <script type="text/javascript">
 if (!String.prototype.endsWith) {
 	(function() {
@@ -331,7 +344,7 @@ function pdf_link() {
 	return '<a href="javascript://" onclick="javascript:form_submit();" target="_blank" ' + 
 		'style="color:black;font-weight:bold;text-decoration:none;margin-left:20px;">PDF</a>' +
 		'<a href="javascript://" onclick="javascript:clear_all();" ' + 
-		'style="color:black;font-weight:bold;text-decoration:none;margin-left:50px;">Clear</a>';
+		'style="color:black;font-weight:bold;text-decoration:none;margin-left:50px;">Clear All</a>';
 }
 function display_img_blob_info(ii, lpad_) {
 	var sz = ii.w + "x" + ii.h + ";";
@@ -460,7 +473,42 @@ span.pipe-delim { font-size: 20px; /* font-weight: bold; */ }
 
 	<!--Your browser is completely ignoring the &lt;applet&gt; tag!-->
 	<span style="font-style:italic;font-size:8pt;">To enable the Scan function on Windows machine please install <a href="http://java.com/en/download/">Java&trade;</a></span>
-</applet> &nbsp;
+</applet> &nbsp;<span class="pipe-delim">|</span>&nbsp; 
+<form id="file-upload" method="POST" enctype="multipart/form-data" style="display:inline-block;"><input id="image-file" type="file" name="image" multiple="true"></form>
+<a href="javascript://" onclick="javascript:file_upload();" style="color:black;font-weight:bold;text-decoration:none;margin-left:0px;">Upload</a> &nbsp; 
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery.form/3.51/jquery.form.min.js"></script>
+<script type="text/javascript">
+	function file_upload() {
+		$.ajax({
+			url: '/twain',
+			method: 'post',
+			dataType: 'json',
+			success: function(data) {
+				var input = document.getElementById('image-file');
+				$('form#file-upload').ajaxSubmit({
+					url: data,
+					dataType: 'json',
+					data: {
+						image_num: input.files && input.files.length ? input.files.length : input.value ? 1 : 0,
+						complete: 'yes'
+					},
+					success: function(data) {
+						//
+						scan_success_(0, true, data);
+					},
+					error: function() {
+						//
+						var i = 1;
+					}
+				});
+			},
+			error: function() {
+				//
+				var i = 1;
+			}
+		});
+	}
+</script>
 <a href="javascript://" onclick="javascript:$('#options-container').toggle();$(this).html($(this).html()=='&laquo;'?'&raquo;':'&laquo;');" 
 	style="color:black;font-size:12pt;font-weight:bold;text-decoration:none;margin-bottom:8px;display:inline-block;" 
 	title="Display/Hide Options">&raquo;</a> &nbsp; 
@@ -550,11 +598,8 @@ if (res != null) { %>
 </body>
 <script type="text/javascript">
 	create_links(<%
-	HttpSession ses = request.getSession();
-	TWAINServlet.getBlobsJson(new PrintWriter(out), // response.getWriter(),
-			TWAINServlet.<BlobKey>sessionList(ses, "img-blob-key"),
-			TWAINServlet.<ImageInfo>sessionList(ses, "img-blob-info")/*,
-			TWAINServlet.getPdfBlobKey(ses)*/);
+			TWAINServlet.getBlobsJson(new PrintWriter(out), // response.getWriter(),
+					TWAINServlet.getBlobRefs(request.getSession(), DatastoreServiceFactory.getDatastoreService()));
 	%>);<%--
 	$("div.crop-frame").resizable({ handles: "n,ne,e,se,s,sw,w,nw", containment: "parent" }).draggable({ containment: "parent" });--%>
 </script>
