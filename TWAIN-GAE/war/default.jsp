@@ -124,7 +124,7 @@ function img_resize(up,down,cw,ch,iw,ih){
 	return false;
 }
 function imgsize(w,h,bpp){
-	var sz = imgsz(w,h,bpp);
+	var sz = h || bpp ? imgsz(w,h,bpp) : w;
 	var suffix = "B";
 	while (sz >= 1000) {
 		sz /= 1024;
@@ -350,7 +350,8 @@ function display_img_blob_info(ii, lpad_) {
 	var sz = ii.w + "x" + ii.h + ";";
 	if (lpad_)
 		sz = lpad(sz, 12, "8");
-	return sz + " " + lpad("" + ii.bpp, 2, "8") + " bpp; " + imgsize(ii.w, ii.h, ii.bpp);
+	return sz + " " + (ii.bpp ? lpad("" + ii.bpp, 2, "8") + " bpp; " + imgsize(ii.w, ii.h, ii.bpp) :
+		lpad(ii.fmt, 6, "8") + "; " + imgsize(ii.filesize));
 }
 function get_orientation() { return $('select[name="orientation"]'); }
 function set_orientation() { return $('select[name="orientation"]').val($('select#orientation').val()); }

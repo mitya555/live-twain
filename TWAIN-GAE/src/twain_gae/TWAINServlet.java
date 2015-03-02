@@ -133,6 +133,8 @@ public class TWAINServlet extends HttpServlet {
 	
 	private BlobstoreService blobstoreService = BlobstoreServiceFactory.getBlobstoreService();
 	private DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
+	
+	private static Object _lock = new Object();
 
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -153,7 +155,7 @@ public class TWAINServlet extends HttpServlet {
 			int image_num = req.getParameter("image_num") != null ? Integer.parseInt(req.getParameter("image_num")) : -1;
 
 //			if (image_num == 0 || image_num == 1)
-//				ses.setAttribute("invalidate-cache", true);
+//				session.setAttribute("invalidate-cache", true);
 			
 			if (image_num > 0) {
 				List<BlobInfo> files = blobstoreService.getBlobInfos(req).get("image");
@@ -169,14 +171,20 @@ public class TWAINServlet extends HttpServlet {
 							BlobKey bk = file.getBlobKey();
 							Entity ds_bk = new Entity("_BLOB_REF", bk.getKeyString(), createSessionKey(session));
 							ds_bk.setProperty("_filesize", file.getSize());
-							ds_bk.setProperty("_imginfo", new ImageInfo(
-									req.getParameter("w"), req.getParameter("h"), req.getParameter("bpp"),
-									req.getParameter("w2"), req.getParameter("h2"), req.getParameter("bpp2")).getEmbeddedEntity());
-							long _next_ordinal = 0;
-							for (Entity bref : datastoreService.prepare(
-									new Query("_BLOB_REF").setAncestor(createSessionKey(session))
-									.addSort("_ordinal", SortDirection.DESCENDING)).asIterable()) {
-								_next_ordinal = (Long)bref.getProperty("_ordinal") + 1; 
+							if (req.getParameter("w") != null && req.getParameter("h") != null)
+								ds_bk.setProperty("_imginfo", new ImageInfo(
+										req.getParameter("w"), req.getParameter("h"), req.getParameter("bpp"),
+										req.getParameter("w2"), req.getParameter("h2"), req.getParameter("bpp2")).getEmbeddedEntity());
+							else {
+						        com.google.appengine.api.images.Image img = ImagesServiceFactory.makeImageFromBlob(bk);
+								ds_bk.setProperty("_imginfo", new ImageInfo(
+										img.getWidth(), img.getHeight(), req.getParameter("bpp"),
+										req.getParameter("w2"), req.getParameter("h2"), req.getParameter("bpp2"),
+										img.getFormat().toString(), file.getSize()).getEmbeddedEntity());
+							}
+							long _next_ordinal;
+							synchronized (_lock) {
+								session.setAttribute("img-cnt", _next_ordinal = session.getAttribute("img-cnt") != null ? (Long)session.getAttribute("img-cnt") + 1L : 0L);
 							}
 							ds_bk.setProperty("_ordinal", _next_ordinal);
 							datastoreService.put(ds_bk);
@@ -205,10 +213,7 @@ public class TWAINServlet extends HttpServlet {
 	}
 	
 	public static void deleteSessionBlobs(HttpSession session, BlobstoreService blobstore, DatastoreService datastore) {
-		for (Entity entity : datastore.prepare(new Query("_BLOB_REF").setAncestor(createSessionKey(session)).setKeysOnly()).asIterable()) {
-			blobstore.delete(new BlobKey(entity.getKey().getName()));
-			datastore.delete(entity.getKey());
-		}
+		SessionCleanupServlet.deleteSessionBlobs(createSessionKey(session), blobstore, datastore);
 	}
 	
 	private void newPdf(HttpServletRequest req, HttpServletResponse resp)
@@ -295,7 +300,7 @@ public class TWAINServlet extends HttpServlet {
 		for (int i = 0; i < brefs.size(); i++) {
 			ImageInfo ii = new ImageInfo((EmbeddedEntity)brefs.get(i).getProperty("_imginfo"));
 			writer.print((i > 0 ? "," : "") + 
-					"{w:" + ii.w + ",h:" + ii.h + ",bpp:" + ii.bpp + ",w2:" + ii.w2 + ",h2:" + ii.h2 + ",bpp2:" + ii.bpp2 + "}");
+					"{w:" + ii.w + ",h:" + ii.h + ",bpp:" + ii.bpp + ",w2:" + ii.w2 + ",h2:" + ii.h2 + ",bpp2:" + ii.bpp2 + ",fmt:'" + ii.fmt + "',filesize:" + ii.filesize + "}");
 		}
 		writer.print("]");
 		writer.print("}");

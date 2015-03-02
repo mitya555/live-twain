@@ -6,7 +6,8 @@ import com.google.appengine.api.datastore.EmbeddedEntity;
 
 @SuppressWarnings("serial")
 public class ImageInfo implements Serializable {
-	public long w, h, bpp, w2, h2, bpp2;
+	public long w, h, bpp, w2, h2, bpp2, filesize;
+	public String fmt = "";
 	private static long string2long(String s) { return s != null ? new Long(s) : 0; }
 	public ImageInfo(String w, String h, String bpp, String w2, String h2, String bpp2) {
 		this.w = string2long(w);
@@ -16,6 +17,11 @@ public class ImageInfo implements Serializable {
 		this.h2 = string2long(h2);
 		this.bpp2 = string2long(bpp2);
 	}
+	public ImageInfo(long w, long h, String bpp, String w2, String h2, String bpp2, String fmt, long filesize) {
+		this("" + w, "" + h, bpp, w2, h2, bpp2);
+		this.fmt = fmt;
+		this.filesize = filesize;
+	}
 	public ImageInfo(EmbeddedEntity e) {
 		this.w = (Long)e.getProperty("w");
 		this.h = (Long)e.getProperty("h");
@@ -23,6 +29,8 @@ public class ImageInfo implements Serializable {
 		this.w2 = (Long)e.getProperty("w2");
 		this.h2 = (Long)e.getProperty("h2");
 		this.bpp2 = (Long)e.getProperty("bpp2");
+		this.fmt = (String)e.getProperty("fmt");
+		this.filesize = (Long)e.getProperty("filesize");
 	}
 	public EmbeddedEntity getEmbeddedEntity() {
 		EmbeddedEntity e = new EmbeddedEntity();
@@ -32,6 +40,8 @@ public class ImageInfo implements Serializable {
 		e.setProperty("w2", this.w2);
 		e.setProperty("h2", this.h2);
 		e.setProperty("bpp2", this.bpp2);
+		e.setProperty("fmt", this.fmt);
+		e.setProperty("filesize", this.filesize);
 		return e;
 	}
 }
