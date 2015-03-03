@@ -185,6 +185,7 @@ public class TWAINServlet extends HttpServlet {
 								session.getAttribute("img-cnt") != null ? (Long)session.getAttribute("img-cnt") + 1L : 0L);
 							ds_bk.setProperty("_ordinal", _next_ordinal);
 							datastoreService.put(ds_bk);
+							datastoreService.put(new Entity("_SESSION_REF", createSessionKeyName(session))); 
 						}
 			}
 	
@@ -205,8 +206,12 @@ public class TWAINServlet extends HttpServlet {
 				.addSort("_ordinal")).asList(withDefaults());
 	}
 
+	public static String createSessionKeyName(HttpSession session) {
+		return "_ahs" + session.getId();
+	}
+
 	public static Key createSessionKey(HttpSession session) {
-		return KeyFactory.createKey("_ah_SESSION", "_ahs" + session.getId());
+		return KeyFactory.createKey("_ah_SESSION", createSessionKeyName(session));
 	}
 	
 	public static void deleteSessionBlobs(HttpSession session, BlobstoreService blobstore, DatastoreService datastore) {

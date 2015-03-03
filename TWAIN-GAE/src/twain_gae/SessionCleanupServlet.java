@@ -6,7 +6,9 @@ import com.google.appengine.api.blobstore.BlobstoreServiceFactory;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
+import com.google.appengine.api.datastore.KeyFactory;
 //import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
@@ -44,25 +46,34 @@ public class SessionCleanupServlet extends HttpServlet {
 	}
 
 	private void clearAll(HttpServletResponse response) {
-		PreparedQuery query = datastore.prepare(
-				new Query(SESSION_ENTITY_TYPE)
-				.setFilter(new FilterPredicate(EXPIRES_PROP, Query.FilterOperator.LESS_THAN, System.currentTimeMillis()))
-				.setKeysOnly()
-			);
-
+		PreparedQuery query = datastore.prepare(expiredSessions());
 	    int count = query.countEntities(withDefaults());
-
-	    for (Entity session : query.asIterable()) {
+	    for (Entity session : query.asIterable())
 	    	deleteSessionBlobs(session.getKey(), this.blobstore, this.datastore);
-	    }
-
 		datastore.delete(new KeyIterable(query.asIterable()));
-	    response.setStatus(200);
 	    try {
 	    	response.getWriter().println("Cleared " + count + " expired sessions.");
+	    } catch (IOException ex) { }
+	    count = 0;
+	    for (Entity session_ref : datastore.prepare(new Query("_SESSION_REF").setKeysOnly()).asIterable()) {
+	    	Key session_key = KeyFactory.createKey("_ah_SESSION", session_ref.getKey().getName());
+	    	try {
+	    		datastore.get(session_key);
+	    	} catch (EntityNotFoundException ex) {
+	    		deleteSessionBlobs(session_key, this.blobstore, this.datastore);
+	    		count++;
+	    	}
 	    }
-	    catch (IOException ex) {
-	    }
+	    try {
+	    	response.getWriter().println("Cleared " + count + " orphaned sessions.");
+	    } catch (IOException ex) { }
+	    response.setStatus(200);
+	}
+
+	public static Query expiredSessions() {
+		return new Query("_ah_SESSION")
+		.setFilter(new FilterPredicate("_expires", Query.FilterOperator.LESS_THAN, System.currentTimeMillis()))
+		.setKeysOnly();
 	}
 
 	public static void deleteSessionBlobs(Key sessionKey, BlobstoreService blobstore, DatastoreService datastore) {
@@ -70,23 +81,30 @@ public class SessionCleanupServlet extends HttpServlet {
 			blobstore.delete(new BlobKey(entity.getKey().getName()));
 			datastore.delete(entity.getKey());
 		}
+		datastore.delete(KeyFactory.createKey("_SESSION_REF", sessionKey.getName()));
 	}
 
 	private void sendForm(String actionUrl, HttpServletResponse response) {
-		PreparedQuery query = datastore.prepare(
-				new Query(SESSION_ENTITY_TYPE)
-				.setFilter(new FilterPredicate(EXPIRES_PROP, Query.FilterOperator.LESS_THAN, System.currentTimeMillis()))
-				.setKeysOnly()
-			);
-
-	    int count = query.countEntities(withDefaults());
-
 	    response.setContentType("text/html");
 	    response.setCharacterEncoding("utf-8");
 	    try {
 	    	PrintWriter writer = response.getWriter();
 	    	writer.println("<html><head><title>Session Cleanup</title></head>");
+			PreparedQuery query = datastore.prepare(expiredSessions());
+		    int count = query.countEntities(withDefaults());
 	    	writer.println("<body>There are currently " + count + " expired sessions.");
+		    count = 0;
+		    for (Entity session_ref : datastore.prepare(new Query("_SESSION_REF").setKeysOnly()).asIterable()) {
+		    	Key session_key = KeyFactory.createKey("_ah_SESSION", session_ref.getKey().getName());
+		    	try {
+		    		datastore.get(session_key);
+		    	} catch (EntityNotFoundException ex) {
+		    		// just count
+		    		//deleteSessionBlobs(session_key, this.blobstore, this.datastore);
+		    		count++;
+		    	}
+		    }
+	    	writer.println("<br />There are currently " + count + " orphaned sessions.");
 	    	writer.println("<p><form method=\"POST\" action=\"" + actionUrl + "\">");
 	    	writer.println("<input type=\"submit\" value=\"Erase them all\" >");
 	    	writer.println("</form></body></html>");
