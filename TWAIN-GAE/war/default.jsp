@@ -52,9 +52,9 @@ private String imgsize(int w,int h,int bpp){
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>TWAIN Applet</title>
-<link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.css" />
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
-<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/themes/smoothness/jquery-ui.css" />
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.66.0-2013.10.09/jquery.blockUI.min.js"></script>
 <script type="text/javascript">
 $.extend($.blockUI.defaults.css, {
@@ -350,8 +350,8 @@ function display_img_blob_info(ii, lpad_) {
 	var sz = ii.w + "x" + ii.h + ";";
 	if (lpad_)
 		sz = lpad(sz, 12, "8");
-	return sz + " " + (ii.bpp ? lpad("" + ii.bpp, 2, "8") + " bpp; " + imgsize(ii.w, ii.h, ii.bpp) :
-		lpad(ii.fmt, 6, "8") + "; " + imgsize(ii.filesize));
+	return sz + " " + (ii.bpp ? "<span class='span-bpp'>" + ii.bpp + " bpp; </span><span class='span-size'>" + imgsize(ii.w, ii.h, ii.bpp) + "</span>" :
+		"<span class='span-bpp'>" + ii.fmt + "; </span><span class='span-size'>" + imgsize(ii.filesize) + "</span>");
 }
 function get_orientation() { return $('select[name="orientation"]'); }
 function set_orientation() { return $('select[name="orientation"]').val($('select#orientation').val()); }
@@ -440,6 +440,8 @@ function scan_params_(i) {
 div.crop-frame { border: 2px dotted red; }
 span.crop-span { white-space: nowrap; font-family: Arial; font-size: 8pt; }
 span.pipe-delim { font-size: 20px; /* font-weight: bold; */ }
+span.span-bpp { display: inline-block; text-align: right; width: 55px; }
+span.span-size { display: inline-block; text-align: right; width: 70px; }
 </style>
 </head>
 <body style="font-family:Arial;font-size:9pt;">
@@ -480,34 +482,37 @@ span.pipe-delim { font-size: 20px; /* font-weight: bold; */ }
 <script src="//cdnjs.cloudflare.com/ajax/libs/jquery.form/3.51/jquery.form.min.js"></script>
 <script type="text/javascript">
 	function file_upload() {
-		$.ajax({
-			url: '/twain',
-			method: 'post',
-			dataType: 'json',
-			success: function(data) {
-				var input = document.getElementById('image-file');
-				$('form#file-upload').ajaxSubmit({
-					url: data,
-					dataType: 'json',
-					data: {
-						image_num: input.files && input.files.length ? input.files.length : input.value ? 1 : 0,
-						complete: 'yes'
-					},
-					success: function(data) {
-						//
-						scan_success_(0, true, data);
-					},
-					error: function() {
-						//
-						var i = 1;
-					}
-				});
-			},
-			error: function() {
-				//
-				var i = 1;
-			}
-		});
+		var input = document.getElementById('image-file'),
+			image_num = input.files && input.files.length ? input.files.length : input.value ? 1 : 0;
+		if (image_num)
+			$.ajax({
+				url: '/twain',
+				type: 'POST',
+				dataType: 'json',
+				success: function(data) {
+					$('form#file-upload').ajaxSubmit({
+						url: data,
+						type: 'POST',
+						dataType: 'text',
+						data: {
+							image_num: image_num,
+							complete: 'yes'
+						},
+						success: function(data) {
+							//
+							scan_success_(0, true, eval('(' + data + ')'));
+						},
+						error: function() {
+							//
+							var i = 1;
+						}
+					});
+				},
+				error: function() {
+					//
+					var i = 1;
+				}
+			});
 	}
 </script>
 <a href="javascript://" onclick="javascript:$('#options-container').toggle();$(this).html($(this).html()=='&laquo;'?'&raquo;':'&laquo;');" 

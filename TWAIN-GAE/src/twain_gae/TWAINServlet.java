@@ -174,7 +174,8 @@ public class TWAINServlet extends HttpServlet {
 										req.getParameter("w"), req.getParameter("h"), req.getParameter("bpp"),
 										req.getParameter("w2"), req.getParameter("h2"), req.getParameter("bpp2")).getEmbeddedEntity());
 							else {
-						        com.google.appengine.api.images.Image img = ImagesServiceFactory.makeImageFromBlob(bk);
+						        com.google.appengine.api.images.Image img = // ImagesServiceFactory.makeImageFromBlob(bk); // throws java.lang.UnsupportedOperationException: No image data is available.
+						        	ImagesServiceFactory.makeImage(readBlobData(bk, file.getSize()));
 								ds_bk.setProperty("_imginfo", new ImageInfo(
 										img.getWidth(), img.getHeight(), req.getParameter("bpp"),
 										req.getParameter("w2"), req.getParameter("h2"), req.getParameter("bpp2"),
