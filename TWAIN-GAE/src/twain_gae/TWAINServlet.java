@@ -34,7 +34,7 @@ import com.google.appengine.api.datastore.KeyFactory;
 //import com.google.appengine.api.datastore.PreparedQuery;
 //import com.google.appengine.api.datastore.Query.FilterOperator;
 //import com.google.appengine.api.datastore.Query.FilterPredicate;
-import com.google.appengine.api.datastore.Query.SortDirection;
+//import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.appengine.api.images.ImagesService;
 import com.google.appengine.api.images.ImagesServiceFactory;
 import com.google.appengine.api.images.Transform;
