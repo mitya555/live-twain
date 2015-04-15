@@ -15,10 +15,9 @@ import java.util.Arrays;
 import java.util.List;
 //import java.util.Map;
 
+
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
-
-//import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import com.google.appengine.api.blobstore.BlobInfo;
 import com.google.appengine.api.blobstore.BlobKey;
@@ -28,6 +27,7 @@ import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.EmbeddedEntity;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 //import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
@@ -190,6 +190,19 @@ public class TWAINServlet extends HttpServlet {
 						}
 			}
 	
+			if (req.getParameter("sort") != null) {
+				String[] _bks = req.getParameterValues("blob-key");
+				for (int i = 0; i < _bks.length; i++) {
+					try {
+						Entity ds_bk = this.datastoreService.get(KeyFactory.createKey(createSessionKey(req.getSession()), "_BLOB_REF", _bks[i]));
+						ds_bk.setProperty("_ordinal", i);
+						this.datastoreService.put(ds_bk);
+					} catch (EntityNotFoundException ex) {
+						ex.printStackTrace();
+					}
+				}
+			}
+
 			if (req.getParameter("complete") != null) {
 					// return images blob keys and info in JSON format
 					getBlobsJson(resp.getWriter(), getBlobRefs(session, this.datastoreService));

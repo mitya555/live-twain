@@ -56,6 +56,7 @@ private String imgsize(int w,int h,int bpp){
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.66.0-2013.10.09/jquery.blockUI.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery.form/3.51/jquery.form.min.js"></script>
 <script type="text/javascript">
 $.extend($.blockUI.defaults.css, {
 	border: 'none', 
@@ -189,7 +190,7 @@ function page_preview(i, no_toggle) {
 		src += "&orientation=landscape";
 	var $page_div = $("div#page-" + (i + 1));
 	if ($page_div.find("img").length == 0) {
-		$page_div.empty().append("<div style='border: solid black 1px; overflow: hidden;'><img /></div>");
+		$page_div.empty().append("<div style='border:solid black 1px;overflow:hidden;background-color:white;'><img /></div>");
 	}
 	var $page_img = $page_div.find("img");
 	$page_img.closest("div").css({ width: cw + "px", height: ch + "px" });
@@ -273,13 +274,22 @@ function img_preview(i) {
 	$page_div.toggle();
 }
 function create_links(data) {
+	
+	$('div#file-links').empty();
+	
+	var $ul;
 	for (var i = 0; i < data.img_blob_key.length; i++) {
+		
+		if (!$ul)
+			$ul = $('<ul id="sortable"></ul>');
+		
 		var img_resized = (data.img_blob_info[i].w2 > 0 && data.img_blob_info[i].h2 > 0 && data.img_blob_info[i].bpp2 > 0),
 			ii = img_resized ? { w: data.img_blob_info[i].w2, h: data.img_blob_info[i].h2, bpp: data.img_blob_info[i].bpp2 } : data.img_blob_info[i];
+		
 		$('\
-<div>\
+<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s icon-up-down"></span>\
 <span style="white-space:nowrap;">\
-	' + lpad("" + (i + 1), 2, "0", true) + '. \
+	' + lpad("" + (i + 1), 2, "0"/*, true*/) + '. \
 	<a href="javascript://" onclick="javascript:page_preview(' + i + ');" title="Page Preview">Page</a>: \
 	&nbsp; \
 </span>\
@@ -332,16 +342,48 @@ function create_links(data) {
 	<div class='crop-frame' style='width:" + ii.w + "px;height:" + ii.h + "px;'></div>\
 	</div>\--%>
 </div>\
-</div>").appendTo('div#file-links');
+</li>").appendTo($ul);
 	}
-	if (data.img_blob_key.length > 0) {
-		$('<hr /><div>' + pdf_link() + '</div>').appendTo('div#file-links');
-		$('<div>' + pdf_link() + '</div><hr />').prependTo('div#file-links');
+	
+	if ($ul) {
+		$('div#file-links').append('<div>' + pdf_link() + '</div><hr />').append($ul).append('<hr /><div>' + pdf_link() + '</div>');
 	}
+	
 	set_stf(true);
+	
+	$("#sortable").sortable({
+		//axis: "y",
+		update: function( event, ui ) {
+			$('#scan-applet').css('visibility', 'hidden');
+			$.blockUI();
+			$('form#pages').attr('action','/twain?sort=yes').attr('target','_self').ajaxSubmit({
+				type: 'POST',
+				dataType: 'text',
+				data: {
+					complete: 'yes'
+				},
+				success: function(data) {
+					//
+					scan_success_(0, true, eval('(' + data + ')'));
+				},
+				error: function() {
+					//
+					var i = 1;
+				},
+				complete: function() {
+					//
+					$.unblockUI({
+						onUnblock: function() {
+							$('#scan-applet').css('visibility', 'visible');
+						}
+					});
+				}
+			});
+		}
+	});
 }
 function pdf_link() {
-	return '<a href="javascript://" onclick="javascript:form_submit();" target="_blank" ' + 
+	return '<a href="javascript://" onclick="javascript:form_pdf();" target="_blank" ' + 
 		'style="color:black;font-weight:bold;text-decoration:none;margin-left:20px;">PDF</a>' +
 		'<a href="javascript://" onclick="javascript:clear_all();" ' + 
 		'style="color:black;font-weight:bold;text-decoration:none;margin-left:50px;">Clear All</a>';
@@ -372,12 +414,12 @@ function set_stf(reset_others) {
 				$this.data(is_90_deg?"h":"w"),$this.data(is_90_deg?"w":"h"));
 	});
 }
-function form_submit() {
+function form_pdf() {
 	var $stf = $('input[name="scale-to-fit"]');
 	$('input:checkbox[name="scale-to-fit-checkbox"]').each(function(i) {
 		$stf[i].value = this.checked ? 'both' : '';
 	});
-	$('form#pages')[0].submit();
+	$('form#pages').attr('action','/twain?newpdf=yes').attr('target','_blank')[0].submit();
 }
 function clear_all() {
 	$('#scan-applet').css('visibility', 'hidden');
@@ -385,9 +427,15 @@ function clear_all() {
 	$.ajax({
 		url: '/twain?clear=yes',
 		success: function() {
+			//
 			$('div#file-links').empty();
 		},
+		error: function() {
+			//
+			var i = 1;
+		},
 		complete: function() {
+			//
 			$.unblockUI({
 				onUnblock: function() {
 					$('#scan-applet').css('visibility', 'visible');
@@ -442,6 +490,9 @@ span.crop-span { white-space: nowrap; font-family: Arial; font-size: 8pt; }
 span.pipe-delim { font-size: 20px; /* font-weight: bold; */ }
 span.span-bpp { display: inline-block; text-align: right; width: 55px; }
 span.span-size { display: inline-block; text-align: right; width: 70px; }
+#sortable { list-style-type: none; margin: 0; padding: 0; }
+#sortable li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; /*font-size: 1.4em;*/ /*height: 18px;*/ /*display: inline-block;*/ }
+#sortable li span.icon-up-down { position: absolute; margin-left: -1.3em; }
 </style>
 </head>
 <body style="font-family:Arial;font-size:9pt;">
@@ -478,13 +529,14 @@ span.span-size { display: inline-block; text-align: right; width: 70px; }
 	<span style="font-style:italic;font-size:8pt;">To enable the Scan function on Windows machine please install <a href="http://java.com/en/download/">Java&trade;</a></span>
 </applet> &nbsp;<span class="pipe-delim">|</span>&nbsp; 
 <form id="file-upload" method="POST" enctype="multipart/form-data" style="display:inline-block;"><input id="image-file" type="file" name="image" multiple="true"></form>
-<a href="javascript://" onclick="javascript:file_upload();" style="color:black;font-weight:bold;text-decoration:none;margin-left:0px;">Upload</a> &nbsp; 
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery.form/3.51/jquery.form.min.js"></script>
+<a href="javascript://" onclick="javascript:file_upload();" style="color:black;font-weight:bold;text-decoration:none;margin-left:0px;">Upload</a> &nbsp;<span class="pipe-delim">|</span>&nbsp;  
 <script type="text/javascript">
 	function file_upload() {
 		var input = document.getElementById('image-file'),
 			image_num = input.files && input.files.length ? input.files.length : input.value ? 1 : 0;
-		if (image_num)
+		if (image_num) {
+			$('#scan-applet').css('visibility', 'hidden');
+			$.blockUI();
 			$.ajax({
 				url: '/twain',
 				type: 'POST',
@@ -501,18 +553,32 @@ span.span-size { display: inline-block; text-align: right; width: 70px; }
 						success: function(data) {
 							//
 							scan_success_(0, true, eval('(' + data + ')'));
+							$('form#file-upload').resetForm();
 						},
 						error: function() {
 							//
 							var i = 1;
+						},
+						complete: function() {
+							//
+							$.unblockUI({
+								onUnblock: function() {
+									$('#scan-applet').css('visibility', 'visible');
+								}
+							});
 						}
 					});
 				},
 				error: function() {
 					//
-					var i = 1;
+					$.unblockUI({
+						onUnblock: function() {
+							$('#scan-applet').css('visibility', 'visible');
+						}
+					});
 				}
 			});
+		}
 	}
 </script>
 <a href="javascript://" onclick="javascript:$('#options-container').toggle();$(this).html($(this).html()=='&laquo;'?'&raquo;':'&laquo;');" 
@@ -554,17 +620,17 @@ Image:
 		<option value="90">90&#xb0; CW</option>
 		<option value="-90">90&#xb0; CCW</option>
 		<option value="180">180&#xb0;</option>
-	</select> &nbsp; &nbsp; 
+	</select>; 
 </span>
 <span style="white-space:nowrap;">Scale to fit: 
-	<label for="scale-to-fit-down">down: </label>
-	<%--<input type="checkbox" id="scale-to-fit-client-down" />--%><%-- onclick="javascript:$('div#scale-factor-slider-container').css('display',this.checked?'inline-block':'none');"--%><%-- <label for="scale-to-fit-client-down">after capture</label>--%>
-	<%--<div id="scale-factor-slider-container" style="display:none;">Down-Scale Factor: <input type="text" id="scale-factor-amount" style="border:0;width:40pt;" /> <div id="scale-factor-slider"></div></div>--%>
+	<label for="scale-to-fit-down">down:</label><%--
+	<input type="checkbox" id="scale-to-fit-client-down" />--%><%-- onclick="javascript:$('div#scale-factor-slider-container').css('display',this.checked?'inline-block':'none');"--%><%-- <label for="scale-to-fit-client-down">after capture</label>--%><%--
+	<div id="scale-factor-slider-container" style="display:none;">Down-Scale Factor: <input type="text" id="scale-factor-amount" style="border:0;width:40pt;" /> <div id="scale-factor-slider"></div></div>--%>
 	<input type="checkbox" id="scale-to-fit-down" 
 			onchange="javascript:set_stf(false);page_preview_onchange_all();" 
 			style="vertical-align:-1px;" /><%-- <label for="scale-to-fit-down">before PDF</label>--%> 
-	<label for="scale-to-fit-up">up: </label>
-	<%--<input type="checkbox" id="scale-to-fit-client-up" /> <label for="scale-to-fit-client-up">after capture</label>--%>
+	<label for="scale-to-fit-up">up:</label><%--
+	<input type="checkbox" id="scale-to-fit-client-up" /> <label for="scale-to-fit-client-up">after capture</label>--%>
 	<input type="checkbox" id="scale-to-fit-up" 
 			onchange="javascript:set_stf(false);page_preview_onchange_all();" 
 			style="vertical-align:-1px;" /><%-- <label for="scale-to-fit-up">before PDF</label>--%>
