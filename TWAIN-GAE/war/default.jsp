@@ -281,15 +281,15 @@ function create_links(data) {
 	for (var i = 0; i < data.img_blob_key.length; i++) {
 		
 		if (!$ul)
-			$ul = $('<ul id="sortable"></ul>');
+			$ul = $('<ol id="sortable"></ol>');
 		
 		var img_resized = (data.img_blob_info[i].w2 > 0 && data.img_blob_info[i].h2 > 0 && data.img_blob_info[i].bpp2 > 0),
 			ii = img_resized ? { w: data.img_blob_info[i].w2, h: data.img_blob_info[i].h2, bpp: data.img_blob_info[i].bpp2 } : data.img_blob_info[i];
 		
 		$('\
 <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s icon-up-down"></span>\
-<span style="white-space:nowrap;">\
-	' + lpad("" + (i + 1), 2, "0"/*, true*/) + '. \
+<span style="white-space:nowrap;"><!--\
+	' + lpad("" + (i + 1), 2, "0"/*, true*/) + '. -->\
 	<a href="javascript://" onclick="javascript:page_preview(' + i + ');" title="Page Preview">Page</a>: \
 	&nbsp; \
 </span>\
@@ -364,7 +364,7 @@ function create_links(data) {
 				},
 				success: function(data) {
 					//
-					scan_success_(0, true, eval('(' + data + ')'));
+					var i = 1;
 				},
 				error: function() {
 					//
@@ -393,7 +393,7 @@ function display_img_blob_info(ii, lpad_) {
 	if (lpad_)
 		sz = lpad(sz, 12, "8");
 	return sz + " " + (ii.bpp ? "<span class='span-bpp'>" + ii.bpp + " bpp; </span><span class='span-size'>" + imgsize(ii.w, ii.h, ii.bpp) + "</span>" :
-		"<span class='span-bpp'>" + ii.fmt + "; </span><span class='span-size'>" + imgsize(ii.filesize) + "</span>");
+		"<span class='span-bpp'>" + ii.fmt + "; </span><span class='span-size'>" + imgsize(ii.filesize) + "; </span><span class='span-name'>" + ii.filename + "</span>");
 }
 function get_orientation() { return $('select[name="orientation"]'); }
 function set_orientation() { return $('select[name="orientation"]').val($('select#orientation').val()); }
@@ -490,9 +490,10 @@ span.crop-span { white-space: nowrap; font-family: Arial; font-size: 8pt; }
 span.pipe-delim { font-size: 20px; /* font-weight: bold; */ }
 span.span-bpp { display: inline-block; text-align: right; width: 55px; }
 span.span-size { display: inline-block; text-align: right; width: 70px; }
-#sortable { list-style-type: none; margin: 0; padding: 0; }
+span.span-name { display: inline-block; padding-left: 1.5em; }
+#sortable { /*list-style-type: none;*/ list-style-position: inside; margin: 0; padding: 0; }
 #sortable li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; /*font-size: 1.4em;*/ /*height: 18px;*/ /*display: inline-block;*/ }
-#sortable li span.icon-up-down { position: absolute; margin-left: -1.3em; }
+#sortable li span.icon-up-down { position: absolute; margin-left: -1.3em; display: none; }
 </style>
 </head>
 <body style="font-family:Arial;font-size:9pt;">
@@ -540,43 +541,34 @@ span.span-size { display: inline-block; text-align: right; width: 70px; }
 			$.ajax({
 				url: '/twain',
 				type: 'POST',
-				dataType: 'json',
-				success: function(data) {
-					$('form#file-upload').ajaxSubmit({
+				dataType: 'json'
+			}).then(function(data) {
+				return $('form#file-upload').ajaxSubmit({
 						url: data,
 						type: 'POST',
 						dataType: 'text',
 						data: {
 							image_num: image_num,
 							complete: 'yes'
-						},
-						success: function(data) {
-							//
-							scan_success_(0, true, eval('(' + data + ')'));
-							$('form#file-upload').resetForm();
-						},
-						error: function() {
-							//
-							var i = 1;
-						},
-						complete: function() {
-							//
-							$.unblockUI({
-								onUnblock: function() {
-									$('#scan-applet').css('visibility', 'visible');
-								}
-							});
 						}
+					}).data('jqxhr').then(null, function() {
+						//
+						var i = 1;
 					});
-				},
-				error: function() {
-					//
-					$.unblockUI({
-						onUnblock: function() {
-							$('#scan-applet').css('visibility', 'visible');
-						}
-					});
-				}
+			}, function() {
+				//
+				var i = 1;
+			}).then(function(data) {
+				//
+				scan_success_(0, true, eval('(' + data + ')'));
+				$('form#file-upload').resetForm();
+			}).always(function() {
+				//
+				$.unblockUI({
+					onUnblock: function() {
+						$('#scan-applet').css('visibility', 'visible');
+					}
+				});
 			});
 		}
 	}

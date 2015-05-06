@@ -146,6 +146,18 @@ public class TWAINServlet extends HttpServlet {
 		else if (req.getParameter("clear") != null) {
 			deleteSessionBlobs(req.getSession(), this.blobstoreService, this.datastoreService);
 		}
+		else if (req.getParameter("sort") != null) {
+			String[] _bks = req.getParameterValues("blob-key");
+			for (int i = 0; i < _bks.length; i++) {
+				try {
+					Entity ds_bk = this.datastoreService.get(KeyFactory.createKey(createSessionKey(req.getSession()), "_BLOB_REF", _bks[i]));
+					ds_bk.setProperty("_ordinal", i);
+					this.datastoreService.put(ds_bk);
+				} catch (EntityNotFoundException ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
 		else {
 			
 			HttpSession session = req.getSession();
@@ -169,6 +181,7 @@ public class TWAINServlet extends HttpServlet {
 							BlobKey bk = file.getBlobKey();
 							Entity ds_bk = new Entity("_BLOB_REF", bk.getKeyString(), createSessionKey(session));
 							ds_bk.setProperty("_filesize", file.getSize());
+							ds_bk.setProperty("_filename", file.getFilename());
 							if (req.getParameter("w") != null && req.getParameter("h") != null)
 								ds_bk.setProperty("_imginfo", new ImageInfo(
 										req.getParameter("w"), req.getParameter("h"), req.getParameter("bpp"),
@@ -179,7 +192,7 @@ public class TWAINServlet extends HttpServlet {
 								ds_bk.setProperty("_imginfo", new ImageInfo(
 										img.getWidth(), img.getHeight(), req.getParameter("bpp"),
 										req.getParameter("w2"), req.getParameter("h2"), req.getParameter("bpp2"),
-										img.getFormat().toString(), file.getSize()).getEmbeddedEntity());
+										img.getFormat().toString(), file.getSize(), file.getFilename()).getEmbeddedEntity());
 							}
 							long _next_ordinal;
 							session.setAttribute("img-cnt", _next_ordinal = 
@@ -190,19 +203,6 @@ public class TWAINServlet extends HttpServlet {
 						}
 			}
 	
-			if (req.getParameter("sort") != null) {
-				String[] _bks = req.getParameterValues("blob-key");
-				for (int i = 0; i < _bks.length; i++) {
-					try {
-						Entity ds_bk = this.datastoreService.get(KeyFactory.createKey(createSessionKey(req.getSession()), "_BLOB_REF", _bks[i]));
-						ds_bk.setProperty("_ordinal", i);
-						this.datastoreService.put(ds_bk);
-					} catch (EntityNotFoundException ex) {
-						ex.printStackTrace();
-					}
-				}
-			}
-
 			if (req.getParameter("complete") != null) {
 					// return images blob keys and info in JSON format
 					getBlobsJson(resp.getWriter(), getBlobRefs(session, this.datastoreService));
@@ -316,7 +316,7 @@ public class TWAINServlet extends HttpServlet {
 		for (int i = 0; i < brefs.size(); i++) {
 			ImageInfo ii = new ImageInfo((EmbeddedEntity)brefs.get(i).getProperty("_imginfo"));
 			writer.print((i > 0 ? "," : "") + 
-					"{w:" + ii.w + ",h:" + ii.h + ",bpp:" + ii.bpp + ",w2:" + ii.w2 + ",h2:" + ii.h2 + ",bpp2:" + ii.bpp2 + ",fmt:'" + ii.fmt + "',filesize:" + ii.filesize + "}");
+					"{w:" + ii.w + ",h:" + ii.h + ",bpp:" + ii.bpp + ",w2:" + ii.w2 + ",h2:" + ii.h2 + ",bpp2:" + ii.bpp2 + ",fmt:'" + ii.fmt + "',filesize:" + ii.filesize + ",filename:'" + ii.filename + "'}");
 		}
 		writer.print("]");
 		writer.print("}");
