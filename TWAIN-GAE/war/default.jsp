@@ -392,8 +392,8 @@ function display_img_blob_info(ii, lpad_) {
 	var sz = ii.w + "x" + ii.h + ";";
 	if (lpad_)
 		sz = lpad(sz, 12, "8");
-	return sz + " " + (ii.bpp ? "<span class='span-bpp'>" + ii.bpp + " bpp; </span><span class='span-size'>" + imgsize(ii.w, ii.h, ii.bpp) + "</span>" :
-		"<span class='span-bpp'>" + ii.fmt + "; </span><span class='span-size'>" + imgsize(ii.filesize) + "; </span><span class='span-name'>" + ii.filename + "</span>");
+	return sz + " " + (ii.bpp ? "<span class='span-bpp'>" + ii.bpp + " bpp; </span><span class='span-size'>" + imgsize(ii.w, ii.h, ii.bpp) + "</span><span class='span-name'>" + (ii.initpos + 1) + "." + "</span>" :
+		"<span class='span-bpp'>" + ii.fmt + "; </span><span class='span-size'>" + imgsize(ii.filesize) + "; </span><span class='span-name'>" + (ii.initpos + 1) + ". " + ii.filename + "</span>");
 }
 function get_orientation() { return $('select[name="orientation"]'); }
 function set_orientation() { return $('select[name="orientation"]').val($('select#orientation').val()); }

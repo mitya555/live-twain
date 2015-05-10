@@ -182,22 +182,23 @@ public class TWAINServlet extends HttpServlet {
 							Entity ds_bk = new Entity("_BLOB_REF", bk.getKeyString(), createSessionKey(session));
 							ds_bk.setProperty("_filesize", file.getSize());
 							ds_bk.setProperty("_filename", file.getFilename());
+							long _next_ordinal;
+							session.setAttribute("img-cnt", _next_ordinal = 
+								session.getAttribute("img-cnt") != null ? (Long)session.getAttribute("img-cnt") + 1L : 0L);
+							ds_bk.setProperty("_ordinal", _next_ordinal);
+							ds_bk.setProperty("_initial_ordinal", _next_ordinal);
 							if (req.getParameter("w") != null && req.getParameter("h") != null)
 								ds_bk.setProperty("_imginfo", new ImageInfo(
 										req.getParameter("w"), req.getParameter("h"), req.getParameter("bpp"),
-										req.getParameter("w2"), req.getParameter("h2"), req.getParameter("bpp2")).getEmbeddedEntity());
+										req.getParameter("w2"), req.getParameter("h2"), req.getParameter("bpp2"), _next_ordinal).getEmbeddedEntity());
 							else {
 						        com.google.appengine.api.images.Image img = // ImagesServiceFactory.makeImageFromBlob(bk); // throws java.lang.UnsupportedOperationException: No image data is available.
 						        	ImagesServiceFactory.makeImage(readBlobData(bk, file.getSize()));
 								ds_bk.setProperty("_imginfo", new ImageInfo(
 										img.getWidth(), img.getHeight(), req.getParameter("bpp"),
-										req.getParameter("w2"), req.getParameter("h2"), req.getParameter("bpp2"),
+										req.getParameter("w2"), req.getParameter("h2"), req.getParameter("bpp2"), _next_ordinal,
 										img.getFormat().toString(), file.getSize(), file.getFilename()).getEmbeddedEntity());
 							}
-							long _next_ordinal;
-							session.setAttribute("img-cnt", _next_ordinal = 
-								session.getAttribute("img-cnt") != null ? (Long)session.getAttribute("img-cnt") + 1L : 0L);
-							ds_bk.setProperty("_ordinal", _next_ordinal);
 							datastoreService.put(ds_bk);
 							datastoreService.put(new Entity("_SESSION_REF", createSessionKeyName(session))); 
 						}
@@ -316,7 +317,7 @@ public class TWAINServlet extends HttpServlet {
 		for (int i = 0; i < brefs.size(); i++) {
 			ImageInfo ii = new ImageInfo((EmbeddedEntity)brefs.get(i).getProperty("_imginfo"));
 			writer.print((i > 0 ? "," : "") + 
-					"{w:" + ii.w + ",h:" + ii.h + ",bpp:" + ii.bpp + ",w2:" + ii.w2 + ",h2:" + ii.h2 + ",bpp2:" + ii.bpp2 + ",fmt:'" + ii.fmt + "',filesize:" + ii.filesize + ",filename:'" + ii.filename + "'}");
+					"{w:" + ii.w + ",h:" + ii.h + ",bpp:" + ii.bpp + ",w2:" + ii.w2 + ",h2:" + ii.h2 + ",bpp2:" + ii.bpp2 + ",initpos:" + ii.initpos + ",fmt:'" + ii.fmt + "',filesize:" + ii.filesize + ",filename:'" + ii.filename + "'}");
 		}
 		writer.print("]");
 		writer.print("}");
