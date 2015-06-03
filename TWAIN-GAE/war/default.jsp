@@ -342,6 +342,7 @@ function create_links(data) {
 	<div class='crop-frame' style='width:" + ii.w + "px;height:" + ii.h + "px;'></div>\
 	</div>\--%>
 </div>\
+<span class='ui-icon ui-icon-close' title='Delete File' onclick='javascript:delete_blob(this,\"" + data.img_blob_key[i] + "\");'></span>\
 </li>").appendTo($ul);
 	}
 	
@@ -444,6 +445,29 @@ function clear_all() {
 		}
 	});
 }
+function delete_blob(e, blob_key) {
+	$('#scan-applet').css('visibility', 'hidden');
+	$.blockUI();
+	$.ajax({
+		url: '/twain?delete-blob=yes&blob-key=' + blob_key,
+		success: function() {
+			//
+			$(e).parents('li:first').remove();
+		},
+		error: function() {
+			//
+			var i = 1;
+		},
+		complete: function() {
+			//
+			$.unblockUI({
+				onUnblock: function() {
+					$('#scan-applet').css('visibility', 'visible');
+				}
+			});
+		}
+	});
+}
 function scan_success_(num, complete, data) {
 	if (num > 0)
 		$('#scan-message').text(complete ? '' : 'Page #' + num + ' complete');
@@ -494,6 +518,7 @@ span.span-name { display: inline-block; padding-left: 1.5em; }
 #sortable { /*list-style-type: none;*/ list-style-position: inside; margin: 0; padding: 0; }
 #sortable li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; /*font-size: 1.4em;*/ /*height: 18px;*/ /*display: inline-block;*/ }
 #sortable li span.icon-up-down { position: absolute; margin-left: -1.3em; display: none; }
+.ui-icon { /*display: inline-block;*/ cursor: pointer; float: right; }
 </style>
 </head>
 <body style="font-family:Arial;font-size:9pt;">

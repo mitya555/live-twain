@@ -357,6 +357,15 @@ public class TWAINServlet extends HttpServlet {
 		else if (req.getParameter("clear") != null) {
 			deleteSessionBlobs(req.getSession(), this.blobstoreService, this.datastoreService);
 		}
+		else if (req.getParameter("delete-blob") != null) {
+			try {
+				Entity entity = this.datastoreService.get(KeyFactory.createKey(createSessionKey(req.getSession()), "_BLOB_REF", req.getParameter("blob-key")));
+				this.datastoreService.delete(entity.getKey());
+				this.blobstoreService.delete(new BlobKey(req.getParameter("blob-key")));
+			} catch (EntityNotFoundException e) {
+				throw new ServletException("Corresponding _BLOB_REF entity not found for the blob-key='" + req.getParameter("blob-key") + "'", e);
+			}
+		}
 		else {
 			BlobKey blobKey = new BlobKey(req.getParameter("blob-key"));
 			String crop = req.getParameter("crop"), rotate = req.getParameter("rotate"), cw = req.getParameter("cw"), ch = req.getParameter("ch");
