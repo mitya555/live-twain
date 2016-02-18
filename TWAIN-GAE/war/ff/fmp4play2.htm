@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+<title>fmp4play2</title>
+<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="jquery.fmp4player.js"></script>
+<script>
+	function setUrl(url, program) {
+		var $url = $('#setUrl');
+		if (url) $url.val(url);
+		var $player = $('#player').fmp4player('setFFmpegParam', 'i', $url.val()||null)
+			.fmp4player('setFFmpegParam', 'map', program?'0:p:'+program:null)
+			.fmp4player('setFFmpegParam', 'map1', program?'-0:d':null);
+		if (!$player.fmp4player('isPlaying')) $player.fmp4player('play');
+	}
+	function parseM3u() {
+		//$('#msg').html(JSON.stringify(M3U.parse($('#m3uSource').val())).replace(/\},\{/g,'},<br />\n{'));
+		var pl = M3U.parse($('#m3uSource').val()), $msg = $('#msg').empty();
+		for (var i in pl) {
+			var pi = pl[i];
+			$msg.append('<span style=\'white-space:nowrap;\'>&nbsp;' +
+				'<a href=\'' + pi.file + '\' title=\'' + pi.file + '\' onclick=\'setUrl("' + pi.file + '");return false;\'>URL</a>&nbsp;' +
+				pi.title + '</span><br />');
+		}
+	}
+</script>
+</head>
+<body style="font-family:Arial;font-size:10pt;margin:3px 0px 0px 3px;">
+
+<a href="javascript:void 0" onclick="setUrl()" title="Default Program">URL</a>
+<a href="javascript:void 0" onclick="setUrl(void 0, 1)" title="Program 1">1</a>
+<a href="javascript:void 0" onclick="setUrl(void 0, 2)" title="Program 2">2</a>
+<a href="javascript:void 0" onclick="setUrl(void 0, 3)" title="Program 3">3</a>
+<a href="javascript:void 0" onclick="setUrl(void 0, 4)" title="Program 4">4</a>
+<a href="javascript:void 0" onclick="setUrl(void 0, 5)" title="Program 5">5</a>
+<a href="javascript:void 0" onclick="setUrl(void 0, 6)" title="Program 6">6</a>
+<a href="javascript:void 0" onclick="setUrl(void 0, 7)" title="Program 7">7</a>
+<a href="javascript:void 0" onclick="setUrl(void 0, 8)" title="Program 8">8</a>
+<a href="javascript:void 0" onclick="setUrl(void 0, 9)" title="Program 9">9</a>
+<input id="setUrl" style="width:98%;" />
+
+<a href="javascript:void 0" onclick="parseM3u()" title="Parse M3U">M3U</a>
+<textarea id="m3uSource" style="width:98%;" rows="2"></textarea>
+
+<div id="player"></div>
+
+<div id="msgCont" style="background-color:black;overflow:auto;position:absolute;bottom:3px;top:155px;right:3px;left:3px;"><code style="color:white;" id="msg"></code></div>
+
+<script>
+var debug_ffmpeg = window.location.search && window.location.search.indexOf('debug-ffmpeg') != -1,
+	debug_bufferlist = window.location.search && window.location.search.indexOf('debug-bufferlist') != -1,
+	debug_java = window.location.search && window.location.search.indexOf('debug-java') != -1,
+	debug_js = window.location.search && window.location.search.indexOf('debug-js') != -1,
+	use_webgl = window.location.search && window.location.search.indexOf('use-webgl') != -1,
+	play_js = window.location.search && window.location.search.indexOf('play-js') != -1,
+	video_java = window.location.search && window.location.search.indexOf('video-java') != -1,
+	ffmpeg_re = window.location.search && window.location.search.indexOf('ffmpeg-re') != -1;
+var opts = {
+	appletParams: {
+		debug: debug_java ? 'yes' : 'no',
+		'debug-ffmpeg': debug_ffmpeg ? 'yes' : 'no',
+		'debug-bufferlist': debug_bufferlist ? 'yes' : 'no',
+		//'ffmpeg-re': 'yes',
+		//'ffmpeg-r': '35',
+		
+		//'ffmpeg-i': 'rtmp://europaplus.cdnvideo.ru/europaplus-live/mp4:eptv_main.sdp',
+		
+		'ffmpeg-i': 'http://tv.life.ru/lifetv/720p/index.m3u8',
+		
+		//'ffmpeg-i': 'rtmp://tv-mix.ru/live/Stream1',
+		
+		//'ffmpeg-i': 'rtmp://rtmp.one.by/HD/1muz',
+		
+		//'ffmpeg-i': 'rtmp://yellow.ether.tv/live/tomsk/broadcast4',
+		
+		//'ffmpeg-i': 'http://85.238.112.10:8810/hls_sec/239.33.15.14-.m3u8',
+		
+		//'ffmpeg-i': 'http://mtvam.ru/hlsam/playlist.m3u8',
+		//'ffmpeg-map': '0:p:2',
+		
+		//"process-frame-callback": "", // uncomment to switch to javascript frames processing/synchronization (requestAnimationFrame() function)
+		//"ffmpeg-c:a": "libmp3lame", // uncomment to switch to javascript frames processing/synchronization (play audio in <audio> tag)
+		//"max-temp-file-count": "20",
+		//"process-frame-number-of-consumer-threads": "2",
+		//"ffmpeg-q:v": "8.0",
+		//"ffmpeg-r": "30",
+	},
+	debug: debug_js ? 'yes' : 'no',
+	audioControls: 'yes',
+	'use-webgl': use_webgl ? 'yes' : 'no',
+};
+if (play_js) {
+	opts.appletParams["process-frame-callback"] = ""; // javascript frames processing/synchronization (requestAnimationFrame() function)
+	opts.appletParams["ffmpeg-c:a"] = "libmp3lame"; // javascript frames processing/synchronization (requestAnimationFrame() function)
+} else if (video_java) {
+	opts.appletParams["process-frame-callback"] = "-32,10,10,10"; // play video in Java
+	opts.appletParams["ffmpeg-pix_fmt"] = "yuv422p"; // play video in Java
+	//opts.appletParams["demux-fMP4-mjpeg2jpeg-bsf"] = "yes"; // play video in Java
+	//opts.appletParams["ffmpeg-o"] = "output_mjpeg_yuvj420p.mp4"; // play video in Java
+	opts.appletParams["java_arguments"] = "-Dsun.java2d.opengl=" + (debug_java ? "True" : "true"); // enable OpenGL for Java2D
+	opts.appletParams["process-frame-number-of-consumer-threads"] = "6";
+}
+if (ffmpeg_re)
+	opts.appletParams["ffmpeg-re"] = "yes";
+$('#player').fmp4player(opts);
+</script>
+
+</body>
+</html>
